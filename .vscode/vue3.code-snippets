@@ -1,0 +1,22 @@
+{
+	"Vue 3 Setup with TypeScript": {
+		"scope": "vue",
+		"prefix": "vue3setup",
+		"body": [
+			"<template>",
+			"  <div>",
+			"    $1",
+			"  </div>",
+			"</template>",
+			"",
+			"<script setup lang=\"ts\">",
+			"",
+			"</script>",
+			"",
+			"<style scoped>",
+			"$4",
+			"</style>"
+		],
+		"description": "Vue 3 Setup with TypeScript"
+	}
+}
