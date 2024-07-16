@@ -12,7 +12,7 @@ export const logOut = () => {
   Taro.removeStorageSync("token");
   Taro.removeStorageSync("userInfo");
   setTimeout(() => {
-    Taro.reLaunch({ url: "/pages/login/index" });
+    Taro.reLaunch({ url: "/moduleA/pages/login/index" });
   }, 2000); // 2000 毫秒等于 2 秒
 };
 

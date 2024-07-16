@@ -90,6 +90,6 @@ const addNode = async () => {
 };
 
 onMounted(async () => {
-   isLogin() || redirectTo({ url: "/pages/login/index" });
+   isLogin() || redirectTo({ url: "/moduleA/pages/login/index" });
 });
 </script>

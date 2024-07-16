@@ -107,7 +107,7 @@
         block
         type="primary"
         plain
-        @click="navigateTo({ url: '/pages/manage/index' })"
+        @click="navigateTo({ url: '/moduleA/pages/manage/index' })"
       >
         管理中心
       </nut-button>

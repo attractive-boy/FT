@@ -63,7 +63,7 @@ const isPlaymate = async () => {
     force: true,
   });
   Taro.navigateTo({
-    url: `/pages/register/playmate/index?userInfo=${JSON.stringify(
+    url: `/moduleA/pages/register/playmate/index?userInfo=${JSON.stringify(
       res.userInfo
     )}`,
   }); // 跳转到陪玩注册页面

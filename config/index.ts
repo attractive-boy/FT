@@ -120,6 +120,9 @@ const config = {
       },
     },
   },
+  cache:{
+    enable: true,
+  }
 };
 
 module.exports = function (merge) {
