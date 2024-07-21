@@ -30,8 +30,12 @@
           text="报备信息"
           ><Dongdong
         /></nut-grid-item>
-        <nut-grid-item text="快捷报备"><Dongdong /></nut-grid-item>
-        <nut-grid-item text="更多……"><Dongdong /></nut-grid-item>
+        <nut-grid-item text="快捷报备"
+        @click="quickReport()"
+        ><Dongdong /></nut-grid-item>
+        <nut-grid-item text="预存"
+          @click="navigateTo({ url: '/pages/index/children/preStore/index' })"
+        ><Dongdong /></nut-grid-item>
       </nut-grid>
     </view>
     <!-- 报备区域 -->
@@ -68,7 +72,7 @@
       </div>
       <RectRight color="gray" size="22px" />
     </view>
-    <nut-button @click="addNode">点击</nut-button>
+    <!-- <nut-button @click="addNode">点击</nut-button> -->
   </view>
 </template>
 
@@ -90,6 +94,16 @@ const addNode = async () => {
 };
 
 onMounted(async () => {
-   isLogin() || redirectTo({ url: "/moduleA/pages/login/index" });
+  isLogin() || redirectTo({ url: "/pages/login/index" });
 });
+const quickReport = () => {
+  httpPost("/report.quick").then((res) => {
+    const {id,type} = res;
+    if(type === 'item'){
+      navigateTo({ url: `/pages/index/children/itemReport/index?id=${id}` });
+    }else{
+      navigateTo({ url: `/pages/index/children/giftReport/index?id=${id}` });
+    }
+  });
+};
 </script>

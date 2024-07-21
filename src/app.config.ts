@@ -1,9 +1,13 @@
 export default defineAppConfig({
-  "pages": [
+  pages: [
     "pages/index/index", // 主页
     "pages/index/children/itemReport/index", // 主页子页面：项目报备页
     "pages/index/children/giftReport/index", // 主页子页面：礼物报备页
     "pages/index/children/reportHistory/index", // 主页子页面：我的报备-报备管理
+
+    "pages/login/index", // 登录页
+
+    "pages/register/playmate/index", // 注册页：陪玩
 
     "pages/my/index", // 我的页
     "pages/my/children/myVip/index", // 我的页子页面：我的会员
@@ -11,23 +15,9 @@ export default defineAppConfig({
     "pages/my/children/wallet/topUp/index", // 我的钱包 - 充值
     "pages/my/children/wallet/withdraw/index", // 我的钱包 - 提现
 
-    
-
-  ],
-  "subpackages": [
-    {
-      "root": "moduleA",
-      "pages": [
-        
-        "pages/login/index", // 登录页
-
-        "pages/register/playmate/index", // 注册页：陪玩
-        
-        "pages/manage/index", // 管理员中心
-        "pages/manage/children/items/index", // 管理员中心子页面：项目列表页
-        "pages/manage/children/gift/index", // 管理员中心子页面：礼物列表页
-      ]
-    }
+    "pages/manage/index", // 管理员中心
+    "pages/manage/children/items/index", // 管理员中心子页面：项目列表页
+    "pages/manage/children/gift/index", // 管理员中心子页面：礼物列表页
   ],
   window: {
     backgroundTextStyle: "light",

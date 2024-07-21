@@ -58,14 +58,8 @@ import { setUserInfo } from "@/utils/auth";
 const status = ref("未注册");
 
 const isPlaymate = async () => {
-  const res = await Taro.getUserProfile({
-    desc: "用户注册信息填写",
-    force: true,
-  });
   Taro.navigateTo({
-    url: `/moduleA/pages/register/playmate/index?userInfo=${JSON.stringify(
-      res.userInfo
-    )}`,
+    url: `/pages/register/playmate/index`,
   }); // 跳转到陪玩注册页面
 };
 

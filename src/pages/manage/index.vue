@@ -110,12 +110,12 @@
       <nut-grid :column-num="3" :clickable="true" :border="false">
         <nut-grid-item
           text="项目管理"
-          @click="navigateTo({ url: '/moduleA/pages/manage/children/items/index' })"
+          @click="navigateTo({ url: '/pages/manage/children/items/index' })"
           ><Dongdong
         /></nut-grid-item>
         <nut-grid-item
           text="礼物管理"
-          @click="navigateTo({ url: '/moduleA/pages/manage/children/gift/index' })"
+          @click="navigateTo({ url: '/pages/manage/children/gift/index' })"
           ><Dongdong
         /></nut-grid-item>
       </nut-grid>

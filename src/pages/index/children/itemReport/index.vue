@@ -159,6 +159,9 @@ const reportPay = async () => {
       }
     },
     fail() {
+      httpPost("/report", {
+          formData: { ...formData.value, type: "item" },
+        })
       message("支付失败", { icon: "error" });
     },
   });
@@ -172,6 +175,26 @@ onMounted(async () => {
   formData.value.item =
     itemList.value.find((item) => item.default === 1)?.id || 0; // 默认选中第一个项目
   await getUserList();
+  const id = Taro.getCurrentInstance().router?.params?.id;
+  if (id) {
+    try {
+      const res = await httpPost("/report.detail.get", { id });
+      const data = res;
+      formData.value = {
+        item: data.item_id,
+        startTime: formData.value.startTime,
+        unitPrice: data.unit_price,
+        orderCount: data.order_count,
+        owner: data.belonged_id,
+        boss: data.boss,
+        lose: data.lose,
+        urls: data.urls,
+        vip_id: data.vip_id,
+      }
+    } catch (error) {
+      console.error("Error fetching report details:", error);
+    }
+  }
 });
 </script>
 
