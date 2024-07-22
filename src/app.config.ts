@@ -18,6 +18,8 @@ export default defineAppConfig({
     "pages/manage/index", // 管理员中心
     "pages/manage/children/items/index", // 管理员中心子页面：项目列表页
     "pages/manage/children/gift/index", // 管理员中心子页面：礼物列表页
+
+    "pages/my/children/myIntegral/index",
   ],
   window: {
     backgroundTextStyle: "light",
