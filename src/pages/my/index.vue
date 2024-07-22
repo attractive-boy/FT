@@ -24,21 +24,12 @@
       </view>
       <Setting size="22px" />
     </view>
-    <!-- 钱包位置 -->
-    <nut-cell
-      title="我的钱包"
-      is-link
-      @click="navigateTo({ url: '/pages/my/children/wallet/index' })"
-    >
-      <template #link>
-        <span class="text-rose-500 font-bold">{{ "0.00 元" }}</span>
-      </template>
-    </nut-cell>
+    <br>
     <!-- 个人陪玩数据信息展示 -->
     <view class="mb-2 bg-white rounded-md p-2">
       <SegmentedControl
         v-model="selectedTab"
-        :tabs="['全部', '今日', '本周', '本月', '全部']"
+        :tabs="['全部', '今日', '本周', '本月', '范围']"
       />
       <view>
         <view class="flex justify-around items-center h-20">
@@ -47,7 +38,7 @@
             <text class="font-bold text-red-500">0.00</text>
           </view>
           <view class="flex justify-around h-7/10 items-center flex-col">
-            <text>总排名</text>
+            <text>剩余积分</text>
             <text class="font-bold text-blue-500">1</text>
           </view>
         </view>
@@ -97,7 +88,9 @@
           @click="navigateTo({ url: '/pages/my/children/myVip/index' })"
           ><Dongdong
         /></nut-grid-item>
-        <nut-grid-item text="版本更新"><Dongdong /></nut-grid-item>
+        <nut-grid-item text="积分充值"
+          @click="navigateTo({ url: '/pages/my/children/myIntegral/index' })"
+        ><Dongdong /></nut-grid-item>
         <nut-grid-item text="其他功能"><Dongdong /></nut-grid-item>
       </nut-grid>
     </view>
@@ -125,4 +118,5 @@ import { ref } from "vue";
 
 const userInfo = getUserInfo();
 const selectedTab = ref(0);
+const 
 </script>

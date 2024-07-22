@@ -21,7 +21,7 @@
           </div>
         </nut-form-item>
         <nut-form-item label="昵称" :label-width="50">
-          <nut-input v-model="formData.nick_name" placeholder="请输入姓名" type="nickname" />
+          <nut-input v-model="formData.nick_name" placeholder="请输入姓名" type="nickname" @blur="onBlur" />
         </nut-form-item>
         <nut-form-item label="性别" :label-width="50">
           <nut-radio-group v-model="formData.gender" direction="horizontal">
@@ -68,6 +68,7 @@ const showDatePicker = () => {
 };
 const applyRegister = async () => {
   const res = await Taro.login();
+  console.log(formData);
   if (await httpPost("/apply.register", { ...formData, code: res.code })) {
     Taro.reLaunch({ url: "/pages/index/index" });
   }
@@ -81,9 +82,12 @@ const onChooseAvatar = (e: any) => {
     filePath: e.detail.avatarUrl,
     name: "file",
     success(res) {
-      console.log(res.data);
+      formData.avatar_url = `${process.env.TARO_APP_OSS}${res.data}`
     },
   });
+};
+const onBlur = (e: any) => {
+  formData.nick_name = e.detail.value;
 };
 
 onMounted(async () => {
