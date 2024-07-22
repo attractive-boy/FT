@@ -3,7 +3,7 @@
     <div class="bg-white">
       <SegmentedControl
         v-model="queryMode.type"
-        :tabs="['我的待办', '我的接单', '我的点单']"
+        :tabs="['我的预存', '所有预存']"
       />
       <div class="p-2">
         <SegmentedControl
@@ -21,6 +21,7 @@
         class="mb-2"
       />
     </div>
+    <nut-button type="primary" block @click="submit">预存报备</nut-button>
   </div>
 </template>
 <script setup lang="ts">
