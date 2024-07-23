@@ -13,7 +13,7 @@
       <view class="flex flex-col justify-between items-start h-auto">
         <view class="flex justify-between items-center w-full">
           <text class="text-lg font-bold">{{ userInfo.nick_name }}</text>
-          <nut-tag type="danger" plain> 单价：10 </nut-tag>
+          <!-- <nut-tag type="danger" plain> 单价：10 </nut-tag> -->
         </view>
         <text class="text-xs italic text-gray-500"
           >{{
@@ -91,7 +91,9 @@
         <nut-grid-item text="积分充值"
           @click="navigateTo({ url: '/pages/my/children/myIntegral/index' })"
         ><Dongdong /></nut-grid-item>
-        <nut-grid-item text="其他功能"><Dongdong /></nut-grid-item>
+        <nut-grid-item text="领工资"
+        @click="navigateTo({ url: '/pages/my/children/mySalary/index' })"
+        ><Dongdong /></nut-grid-item>
       </nut-grid>
     </view>
     <!-- 管理员 -->

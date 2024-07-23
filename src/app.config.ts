@@ -11,9 +11,6 @@ export default defineAppConfig({
 
     "pages/my/index", // 我的页
     "pages/my/children/myVip/index", // 我的页子页面：我的会员
-    "pages/my/children/wallet/index", // 我的页子页面：我的钱包
-    "pages/my/children/wallet/topUp/index", // 我的钱包 - 充值
-    "pages/my/children/wallet/withdraw/index", // 我的钱包 - 提现
 
     "pages/manage/index", // 管理员中心
     "pages/manage/children/items/index", // 管理员中心子页面：项目列表页
