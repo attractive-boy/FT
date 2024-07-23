@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "预存信息",
+  navigationBarTitleText: "预存报备",
 });

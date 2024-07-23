@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "礼物报备",
+  navigationBarTitleText: "报备数据",
 });

@@ -20,6 +20,11 @@ export default defineAppConfig({
     "pages/manage/children/gift/index", // 管理员中心子页面：礼物列表页
 
     "pages/my/children/myIntegral/index",
+    "pages/index/children/preStore/index",
+    "pages/manage/children/report/index",
+    "pages/manage/children/invite/index",
+    "pages/manage/children/member/index",
+    "pages/manage/children/integral/index"
   ],
   window: {
     backgroundTextStyle: "light",
@@ -28,8 +33,11 @@ export default defineAppConfig({
     navigationBarTextStyle: "black",
   },
   tabBar: {
-    color: "gray",
+    custom: true,
+    color: "#8e8e8e",
     selectedColor: "#1296db",
+    backgroundColor: "#ffffff",
+    borderStyle: "black",
     list: [
       {
         pagePath: "pages/index/index",

@@ -118,6 +118,28 @@
           @click="navigateTo({ url: '/pages/manage/children/gift/index' })"
           ><Dongdong
         /></nut-grid-item>
+        <nut-grid-item
+          text="报备数据"
+          @click="navigateTo({ url: '/pages/manage/children/report/index' })"
+          ><Dongdong
+        /></nut-grid-item>
+        <nut-grid-item
+          text="邀请成员"
+          @click="navigateTo({ url: '/pages/manage/children/invite/index' })"
+          ><Dongdong
+        /></nut-grid-item>
+        <!-- 成员管理 -->
+        <nut-grid-item
+          text="成员管理"
+          @click="navigateTo({ url: '/pages/manage/children/member/index' })"
+          ><Dongdong
+        /></nut-grid-item>
+        <!-- 积分管理 -->
+        <nut-grid-item
+          text="积分管理"
+          @click="navigateTo({ url: '/pages/manage/children/integral/index' })"
+          ><Dongdong
+        /></nut-grid-item>
       </nut-grid>
     </view>
   </view>

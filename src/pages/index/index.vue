@@ -33,7 +33,7 @@
         <nut-grid-item text="快捷报备"
         @click="quickReport()"
         ><Dongdong /></nut-grid-item>
-        <nut-grid-item text="预存"
+        <nut-grid-item text="预存报备"
           @click="navigateTo({ url: '/pages/index/children/preStore/index' })"
         ><Dongdong /></nut-grid-item>
       </nut-grid>
