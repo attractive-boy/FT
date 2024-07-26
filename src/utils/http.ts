@@ -54,6 +54,7 @@ async function httpPost<T>(url: string, data?: any): Promise<T | any> {
           result = false;
         } else if (res.statusCode === 401) {
           message(res.data.msg, { icon: "error" });
+          console.log("401");
           logOut();
           result = false;
         } else if (res.statusCode === 403) {

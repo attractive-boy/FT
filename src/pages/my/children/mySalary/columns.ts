@@ -11,74 +11,27 @@ import { inquiry } from "@/components/MyDialog/inquiry";
 export const getColumns = (getItem: () => void) =>
   [
     {
-      title: "礼物名",
+      title: "时间",
       stylecolumn: "width: 25%",
       align: "center",
-      render: (row) =>
-        h(
-          "div",
-          { class: row.default === 1 ? "bg-orange-300 p-0.5 rounded-sm" : "" },
-          row.name
-        ),
+      key: "created_at",
     },
     {
-      title: "抽成",
-      key: "commission",
+      title: "到账",
+      key:  "amount",
       stylecolumn: "width: 25%",
       align: "center",
     },
     {
-      title: "返点",
-      key: "rebate",
+      title: "手续费",
+      key:  "fee",
       stylecolumn: "width: 25%",
       align: "center",
     },
     {
-      title: "操作",
+      title: "状态",
       stylecolumn: "width: 25%",
       align: "center",
-      render: (row) =>
-        h(MoreX, {
-          onClick: () => {
-            const cloneRow = clone(row);
-            showControl({
-              menuItems: [
-                { name: "编辑", color: "#409EFF" },
-                { name: "删除", color: "#F56C6C" },
-                { name: "设为默认", color: "#E6A23C" },
-              ],
-              async selectCallBack({ index, done }) {
-                done();
-                if (index === 0) {
-                  // 编辑操作的逻辑
-                  showActionSheet({
-                    title: "添加项目",
-                    props: {
-                      formData: cloneRow,
-                    },
-                    renderContent: () => ItemForm,
-                    beforeSure: async (done, options) => {
-                      const { formData } = options.props;
-                      if (await httpPost("/gift.edit", formData)) {
-                        await getItem();
-                        done();
-                      }
-                    },
-                  });
-                } else if (index === 1) {
-                  // 删除操作的逻辑
-                  if (await inquiry("是否删除这个项目？")) {
-                    if (await httpPost("/gift.del", { id: row.id })) {
-                      await getItem();
-                    }
-                  }
-                } else if (index === 2) {
-                  await httpPost("/gift.set.default", { id: row.id });
-                  await getItem();
-                }
-              },
-            });
-          },
-        }),
+      key: "status",
     },
   ] as TableColumns[];

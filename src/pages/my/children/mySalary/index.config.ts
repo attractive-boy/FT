@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "礼物管理",
+  navigationBarTitleText: "领工资",
 });

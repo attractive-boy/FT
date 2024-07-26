@@ -21,7 +21,8 @@ export default defineAppConfig({
     "pages/manage/children/report/index",
     "pages/manage/children/invite/index",
     "pages/manage/children/member/index",
-    "pages/manage/children/integral/index"
+    "pages/manage/children/integral/index",
+    "pages/my/children/mySalary/index"
   ],
   window: {
     backgroundTextStyle: "light",

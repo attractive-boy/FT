@@ -140,6 +140,11 @@
           @click="navigateTo({ url: '/pages/manage/children/integral/index' })"
           ><Dongdong
         /></nut-grid-item>
+        <nut-grid-item
+          text="积分管理"
+          @click="navigateTo({ url: '/pages/manage/children/integral/index' })"
+          ><Dongdong
+        /></nut-grid-item>
       </nut-grid>
     </view>
   </view>
