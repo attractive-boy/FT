@@ -141,8 +141,8 @@
           ><Dongdong
         /></nut-grid-item>
         <nut-grid-item
-          text="积分管理"
-          @click="navigateTo({ url: '/pages/manage/children/integral/index' })"
+          text="发工资"
+          @click="navigateTo({ url: '/pages/manage/children/paySalaries/index' })"
           ><Dongdong
         /></nut-grid-item>
       </nut-grid>
@@ -154,7 +154,26 @@
 import { Dongdong } from "@nutui/icons-vue-taro";
 import { navigateTo } from "@tarojs/taro";
 import SegmentedControl from "@/components/SegmentedControl/index.vue";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import Taro from "@tarojs/taro";
 
 const activeKey = ref(0);
+
+
+
+onMounted(() => {
+  // 定义禁止访问的日期（9月1日）
+  const RESTRICTED_DATE = new Date(2024, 8, 1); // 8 表示 9 月（月份从 0 开始）
+
+  // 获取当前日期
+  const now = new Date();
+  const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 检查当前日期是否在禁止访问日期之后
+  const isAfterRestrictedDate = currentDate > RESTRICTED_DATE;
+  if(isAfterRestrictedDate){
+  Taro.navigateTo({ url: '/pages/restricted/index' });
+}
+});
+
 </script>

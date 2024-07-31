@@ -2,16 +2,16 @@
   <view class="bg-gray-200 min-h-screen content">
     <view class="w-auto rounded-md m-2 px-2 bg-white">
       <nut-grid :column-num="4" :clickable="true" :border="false">
-        <nut-grid-item text="可提现" style="max-width: 22%;">
+        <nut-grid-item text="可提现" >
           {{statics.balance}}
         </nut-grid-item>
-        <nut-grid-item text="退款中" style="max-width: 22%;">
+        <nut-grid-item text="退款中" >
           {{statics.refund}}
         </nut-grid-item>
-        <nut-grid-item text="处理中" style="max-width: 22%;">
+        <nut-grid-item text="处理中" >
           {{statics.processing}}
         </nut-grid-item>
-        <nut-grid-item text="已提现" style="max-width: 22%;">
+        <nut-grid-item text="已提现" >
           {{statics.withdraw}}
         </nut-grid-item>
       </nut-grid>

@@ -3,7 +3,7 @@
     <view class="mx-2 bg-white rounded-md p-2" style="margin-top: .5rem;">
       <SegmentedControl
         v-model="activeKey"
-        :tabs="['全部', '今日', '本周', '本月', '自定义']"
+        :tabs="['全部', '本月', '本周', '今天', '范围']"
       />
       <view v-if="activeKey === 4">
         <nut-form>

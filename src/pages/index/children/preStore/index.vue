@@ -31,6 +31,13 @@
             type="text"
           />
         </nut-form-item>
+        <nut-form-item label="所在群聊">
+          <nut-input
+            v-model="formData.group"
+            placeholder="请输入老板所在群聊"
+            type="text"
+          />
+        </nut-form-item>
       </nut-form>
       
       <nut-button @click="reportStore" type="success" block
@@ -52,13 +59,15 @@ interface FormData {
   store_time: number;
   amount: string;
   boss: string;
+  group: string;
 }
 
 const userInfo = getUserInfo();
 const formData = ref<FormData>({
   store_time: Date.now(),
   amount: '',
-  boss: ''
+  boss: '',
+  group:''
 });
 
 const reportStore = async () => {

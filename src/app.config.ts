@@ -22,7 +22,9 @@ export default defineAppConfig({
     "pages/manage/children/invite/index",
     "pages/manage/children/member/index",
     "pages/manage/children/integral/index",
-    "pages/my/children/mySalary/index"
+    "pages/my/children/mySalary/index",
+    "pages/restricted/index",
+    "pages/manage/children/paySalaries/index"
   ],
   window: {
     backgroundTextStyle: "light",

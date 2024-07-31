@@ -87,13 +87,19 @@
           <b class="text-green-500">{{ toFixed(income, 2) }}</b>
         </div>
       </div>
+      <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
+        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(commission, 2) }}</b> 积分</span>
+      </div>
+      <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
+        <span class="text-sm text-gray-500" style="padding: 1rem 0;">您当前剩余 <b class="text-blue-500">{{ toFixed(myPoints, 2) }}</b> 积分</span>
+      </div>
     </div>
     <div class="p-5">
       <nut-button @click="reportPay" type="success" block
         >支付 && 报备</nut-button
       >
     </div>
-  </div>
+  </div> 
 </template>
 
 <script setup lang="ts">
@@ -138,33 +144,49 @@ const rebate = computed(
 );
 const income = computed(() => total.value - commission.value);
 
-const reportPay = async () => {
-  const options = await httpPost("/pay", {
-    desc: `${
-      itemList.value.find((item) => item.id === formData.value.item).name
-    } - 报备抽成`,
-    total: toFixed(commission.value, 2),
-  });
-  formData.value.urls = MyUploadRef.value.fileList.map((item) => item.url);
+const myPoints = ref(0);
 
-  Taro.requestPayment({
-    ...options.data,
-    success: async () => {
-      if (
-        await httpPost("/report", {
-          formData: { ...formData.value, type: "item" },
-        })
-      ) {
-        Taro.switchTab({ url: "/pages/index/index" });
-      }
-    },
-    fail() {
-      httpPost("/report", {
-          formData: { ...formData.value, type: "item" },
-        })
-      message("支付失败", { icon: "error" });
-    },
-  });
+// const reportPay = async () => {
+//   const options = await httpPost("/pay.points", {
+//     desc: `${
+//       itemList.value.find((item) => item.id === formData.value.item).name
+//     } - 报备抽成`,
+//     total: toFixed(commission.value, 2),
+//   });
+//   formData.value.urls = MyUploadRef.value.fileList.map((item) => item.url);
+
+//   Taro.requestPayment({
+//     ...options.data,
+//     success: async () => {
+//       if (
+//         await httpPost("/report", {
+//           formData: { ...formData.value, type: "item" },
+//         })
+//       ) {
+//         Taro.switchTab({ url: "/pages/index/index" });
+//       }
+//     },
+//     fail() {
+//       httpPost("/report", {
+//           formData: { ...formData.value, type: "item" },
+//         })
+//       message("支付失败", { icon: "error" });
+//     },
+//   });
+// };
+
+const reportPay = async () => {
+  if (myPoints.value < toFixed(commission.value, 2)) {
+    message("您的积分不足，请先充值", { icon: "error" });
+    return;
+  }
+  if (
+    await httpPost("/user.points.consume", {
+      formData: { amount:toFixed(commission.value, 2) },
+    })
+  ) {
+    Taro.switchTab({ url: "/pages/index/index" });
+  }
 };
 const getUserList = async () => {
   userList.value = await httpPost("/user.vips.list.get");
@@ -195,7 +217,13 @@ onMounted(async () => {
       console.error("Error fetching report details:", error);
     }
   }
+  getMyPoints();
 });
+
+const getMyPoints = async () => {
+  const res = await httpPost("/user.points.get");
+  myPoints.value = res;
+};
 </script>
 
 <style scoped></style>

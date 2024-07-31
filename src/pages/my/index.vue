@@ -29,7 +29,7 @@
     <view class="mb-2 bg-white rounded-md p-2">
       <SegmentedControl
         v-model="selectedTab"
-        :tabs="['全部', '今日', '本周', '本月', '范围']"
+        :tabs="['全部', '本月', '本周' ,'今日', '范围']"
       />
       <view>
         <view class="flex justify-around items-center h-20">
