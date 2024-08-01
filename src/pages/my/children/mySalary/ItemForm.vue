@@ -1,7 +1,10 @@
 <template>
   <nut-form>
-    <nut-form-item label="收款二维码">
-      <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'" v-model:file-list="qrcodeList" @success="handleUploadSuccess"></nut-uploader>
+    <nut-form-item label="微信二维码">
+      <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'" v-model:file-list="wxqrcodeList" @success="handleUploadSuccess"></nut-uploader>
+    </nut-form-item>
+    <nut-form-item label="支付宝二维码">
+      <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'" v-model:file-list="zfbqrcodeList" @success="handleUploadSuccess"></nut-uploader>
     </nut-form-item>
     <nut-form-item label="收款人电话">
       <nut-input v-model="formData.phone" placeholder="请输入收款人电话" type="text" />
@@ -49,8 +52,8 @@ const props = withDefaults(defineProps<FormProps>(), {
 });
 
 const formData = ref(props.formData);
-const qrcodeList = ref([]);
-
+const wxqrcodeList = ref([]);
+const zfbqrcodeList = ref([]);
 const calculateFees = () => {
   const feeRate = 0.006; // 提现手续费率
   formData.value.fee = parseFloat((formData.value.amount * feeRate).toFixed(2));

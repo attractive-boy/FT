@@ -156,7 +156,7 @@ import { navigateTo } from "@tarojs/taro";
 import SegmentedControl from "@/components/SegmentedControl/index.vue";
 import { onMounted, ref } from "vue";
 import Taro from "@tarojs/taro";
-
+import { toFixed } from "@/utils/toFixed";
 const activeKey = ref(0);
 
 

@@ -181,8 +181,18 @@ const reportPay = async () => {
     return;
   }
   if (
-    await httpPost("/user.points.consume", {
-      formData: { amount:toFixed(commission.value, 2) },
+    await httpPost("/report", {
+          formData: { ...formData.value, type: "item",
+          // 总金额
+          total:toFixed(total.value, 2),
+          // 抽成
+          commission:toFixed(commission.value, 2),
+          // 返点
+          rebate:toFixed(rebate.value, 2),
+          // 收益
+          income:toFixed(income.value, 2)
+          
+           },
     })
   ) {
     Taro.switchTab({ url: "/pages/index/index" });
