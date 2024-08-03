@@ -18,8 +18,9 @@
     <view class="mx-2 bg-white rounded-md p-2">
       <SegmentedControl
         v-model="activeKey"
-        :tabs="['全部', '今日', '本周', '本月', '全部']"
+        :tabs="['全部', '本月', '上月', '今天', '范围']"
       />
+      <MyDateRangePicker v-if="activeKey == 4" v-model="rangedate" />
       <view>
         <view class="flex justify-around items-center h-20">
           <view class="flex justify-around h-7/10 items-center flex-col">
@@ -154,9 +155,11 @@
 import { Dongdong } from "@nutui/icons-vue-taro";
 import { navigateTo } from "@tarojs/taro";
 import SegmentedControl from "@/components/SegmentedControl/index.vue";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import Taro from "@tarojs/taro";
 import { toFixed } from "@/utils/toFixed";
+import httpPost from "@/utils/http";
+import { format } from "date-fns";
 const activeKey = ref(0);
 
 
@@ -174,6 +177,65 @@ onMounted(() => {
   if(isAfterRestrictedDate){
   Taro.navigateTo({ url: '/pages/restricted/index' });
 }
+});
+
+const statics = ref({
+  income: 0,
+  balance: 0,
+  reportCount: 0,
+  reportAmount: 0,
+  reportTotal:0,
+  orderCount: 0,
+  orderAmount: 0,
+  commissionTotal:0,
+});
+const rangedate = ref( [ format(new Date(2024, 0, 1), "yyyy-MM-dd"), format(new Date(), "yyyy-MM-dd") ]);
+// 监听rangedate的变化
+watch(rangedate, async (newValue:any) => {
+  statics.value = await httpPost( '/club.statics', {
+    startTime: newValue[0],
+    endTime: newValue[1],
+  })
+});
+const startTime = ref(format(new Date(2024, 0, 1), "yyyy-MM-dd"));
+const endTime = ref(format(new Date(), "yyyy-MM-dd"));
+//根据时间范围 查看个人统计
+watch(activeKey, async (newValue:any) => {
+
+    switch (newValue) {
+        case 0:
+            //全部 获取 2024 - 2100年之间的
+            startTime.value = format(new Date(2024, 0, 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(2100, 0, 1), "yyyy-MM-dd");
+            statics.value = await httpPost( '/club.statics', { startTime: startTime.value, endTime:endTime.value })
+            break;
+        case 1:
+            //本月
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), "yyyy-MM-dd");
+            statics.value = await httpPost( '/club.statics', { startTime:startTime.value, endTime: endTime.value })
+            break;
+        case 2:
+            // 本周
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay()), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay() + 6), "yyyy-MM-dd");
+            statics.value = await httpPost( '/club.statics', { startTime:startTime.value, endTime:endTime.value })
+            break;
+        case 3:
+            // 今日
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
+            statics.value = await httpPost( '/club.statics', { startTime:startTime.value, endTime:endTime.value })
+            break;
+        case 4:
+            break;
+        default:
+            //全部 获取 2024 - 2100年之间的
+            startTime.value = format(new Date(2024, 0, 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(2100, 0, 1), "yyyy-MM-dd");
+            statics.value = await httpPost( '/club.statics', { startTime:startTime.value, endTime:endTime.value })
+            break;
+    }
 });
 
 </script>

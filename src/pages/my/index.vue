@@ -31,6 +31,7 @@
         v-model="selectedTab"
         :tabs="['全部', '本月', '本周' ,'今日', '范围']"
       />
+      <MyDateRangePicker v-if="selectedTab == 4" v-model="rangedate" />
       <view>
         <view class="flex justify-around items-center h-20">
           <view class="flex justify-around h-7/10 items-center flex-col">
@@ -114,6 +115,7 @@
 import { Dongdong, Setting } from "@nutui/icons-vue-taro";
 import { navigateTo } from "@tarojs/taro";
 import SegmentedControl from "@/components/SegmentedControl/index.vue";
+import MyDateRangePicker from "@/components/TimeRangePicker/index.vue";
 import { getUserInfo } from "@/utils/auth";
 import { format } from "date-fns";
 import { ref, watch } from "vue";
@@ -131,46 +133,51 @@ const statics = ref({
   orderAmount: 0,
   commissionTotal:0,
 });
+const rangedate = ref( [ format(new Date(2024, 0, 1), "yyyy-MM-dd"), format(new Date(), "yyyy-MM-dd") ]);
+// 监听rangedate的变化
+watch(rangedate, async (newValue:any) => {
+  statics.value = await httpPost( '/user.statics', {
+    startTime: newValue[0],
+    endTime: newValue[1],
+  })
+});
+const startTime = ref(format(new Date(2024, 0, 1), "yyyy-MM-dd"));
+const endTime = ref(format(new Date(), "yyyy-MM-dd"));
 //根据时间范围 查看个人统计
 watch(selectedTab, async (newValue:any) => {
-    let startTime;
-    let endTime;
+
     switch (newValue) {
         case 0:
             //全部 获取 2024 - 2100年之间的
-            startTime = format(new Date(2024, 0, 1), "yyyy-MM-dd");
-            endTime = format(new Date(2100, 0, 1), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
+            startTime.value = format(new Date(2024, 0, 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(2100, 0, 1), "yyyy-MM-dd");
+            statics.value = await httpPost( '/user.statics', { startTime: startTime.value, endTime:endTime.value })
             break;
         case 1:
             //本月
-            startTime = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
-            endTime = format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), "yyyy-MM-dd");
+            statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime: endTime.value })
             break;
         case 2:
             // 本周
-            startTime = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay()), "yyyy-MM-dd");
-            endTime = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay() + 6), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay()), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() - new Date().getDay() + 6), "yyyy-MM-dd");
+            statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime:endTime.value })
             break;
         case 3:
             // 今日
-            startTime = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
-            endTime = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
+            startTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
+            endTime.value = format(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()), "yyyy-MM-dd");
+            statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime:endTime.value })
             break;
         case 4:
-            // 范围
-            startTime = format(new Date(2024, 0, 1), "yyyy-MM-dd");
-            endTime = format(new Date(2100, 0, 1), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
             break;
         default:
             //全部 获取 2024 - 2100年之间的
-            startTime = format(new Date(2024, 0, 1), "yyyy-MM-dd");
-            endTime = format(new Date(2100, 0, 1), "yyyy-MM-dd");
-            statics.value = await httpPost( '/user.statics', { startTime, endTime })
+            startTime.value = format(new Date(2024, 0, 1), "yyyy-MM-dd");
+            endTime.value = format(new Date(2100, 0, 1), "yyyy-MM-dd");
+            statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime:endTime.value })
             break;
     }
 });

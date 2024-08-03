@@ -64,6 +64,13 @@ const config = {
           },
         },
       });
+      
+      // Enable HMR for mini apps
+      if (process.env.NODE_ENV === 'development') {
+        chain.devServer
+          .hot(true)
+          .open(true); // Automatically open the browser
+      }
     },
     postcss: {
       pxtransform: {
@@ -102,6 +109,13 @@ const config = {
           ],
         })
       );
+
+      // Enable HMR for H5 apps
+      if (process.env.NODE_ENV === 'development') {
+        chain.devServer
+          .hot(true)
+          .open(true); // Automatically open the browser
+      }
     },
     publicPath: "/",
     staticDirectory: "static",
