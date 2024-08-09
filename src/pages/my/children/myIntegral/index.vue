@@ -59,6 +59,9 @@
 import httpPost from "@/utils/http";
 import { ref, onMounted } from "vue";
 import { getColumns } from "./columns";
+import { toFixed } from "@/utils/toFixed";
+import Taro from "@tarojs/taro";
+import { message } from "@/utils/message";
 
 // 表单数据
 const formData = ref({
@@ -83,14 +86,36 @@ const confirm = ({ selectedValue, selectedOptions }) => {
 }
 // 提交表单数据
 const submit = async () => {
-  //判断给自己还是好友 /recharge.friend
-  if (formData.value.type === '好友充值') {
-    if (formData.value.owner != null) {
-      await httpPost( '/recharge.friend', { amount : formData.value.recharge, recipient_id: formData.value.owner })
-    } 
-  }else{
-    await httpPost( '/recharge', { amount : formData.value.recharge })
-  }
+  const options = await httpPost("/pay", {
+    desc: `积分充值`,
+    total: toFixed(Number(formData.value.recharge), 2),
+  });
+  //debug
+  // if (formData.value.type === '好友充值') {
+  //   if (formData.value.owner != null) {
+  //     await httpPost( '/recharge.friend', { amount : formData.value.recharge, recipient_id: formData.value.owner })
+  //   } 
+  // }else{
+  //   await httpPost( '/recharge', { amount : formData.value.recharge })
+  // }
+
+  Taro.requestPayment({
+    ...options.data,
+    success: async () => {
+        //判断给自己还是好友 /recharge.friend
+        if (formData.value.type === '好友充值') {
+          if (formData.value.owner != null) {
+            await httpPost( '/recharge.friend', { amount : formData.value.recharge, recipient_id: formData.value.owner })
+          } 
+        }else{
+          await httpPost( '/recharge', { amount : formData.value.recharge })
+        }
+        await init()
+    },
+    fail() {
+      message("支付失败", { icon: "error" });
+    },
+  });
 };
 
 // 获取用户列表
@@ -104,6 +129,10 @@ const getUserList = async () => {
 const itemData = ref([]);
 // 初始化数据
 onMounted(async () => {
+  await init()
+});
+
+const init =  async () => {
   try {
     // 获取用户信息或其他初始化操作
     const response = await httpPost('/user.info.get');
@@ -117,7 +146,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('初始化数据失败', error);
   }
-});
+};
 
 // 获取每行数据
 const getItem = () => {

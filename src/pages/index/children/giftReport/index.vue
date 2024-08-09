@@ -79,7 +79,7 @@
         </div>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
-        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(commission, 2) }}</b> 积分</span>
+        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(total, 2) }}</b> 积分</span>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
         <span class="text-sm text-gray-500" style="padding: 1rem 0;">您当前剩余 <b class="text-blue-500">{{ toFixed(myPoints, 2) }}</b> 积分</span>
@@ -102,7 +102,7 @@ import { computed, onMounted, ref } from "vue";
 import { toFixed } from "@/utils/toFixed";
 import Taro from "@tarojs/taro";
 import { message } from "@/utils/message";
-
+import MySwitchCell from "@/components/MySwitch/index.vue";
 const formData = ref({
   item: 1,
   startTime: Date.now(),
@@ -134,7 +134,7 @@ const rebate = computed(
 const income = computed(() => total.value - commission.value);
 
 const reportPay = async () => {
-  if (myPoints.value < toFixed(commission.value, 2)) {
+  if (myPoints.value < toFixed(total.value, 2)) {
     message("您的积分不足，请先充值", { icon: "error" });
     return;
   }
@@ -155,8 +155,10 @@ const reportPay = async () => {
            },
     })
   ) {
-    Taro.switchTab({ url: "/pages/index/index" });
+    
   }
+
+  Taro.switchTab({ url: "/pages/index/index" });
 };
 const getUserList = async () => {
   userList.value = await httpPost("/user.list.get", {

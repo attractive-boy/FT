@@ -56,7 +56,6 @@ const getStatic = async () => {
 };
 const getSallary = async () => {
   showActionSheet({
-    title: "领工资",
     props: {
       formData: {
       },

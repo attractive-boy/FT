@@ -121,6 +121,7 @@ import { format } from "date-fns";
 import { ref, watch } from "vue";
 import httpPost from "@/utils/http";
 import { toFixed } from "@/utils/toFixed";
+import { onMounted } from "vue";
 const userInfo = getUserInfo();
 const selectedTab = ref(0);
 const statics = ref({
@@ -180,5 +181,24 @@ watch(selectedTab, async (newValue:any) => {
             statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime:endTime.value })
             break;
     }
+});
+onMounted(async () => {
+  startTime.value = format(new Date(2024, 0, 1), "yyyy-MM-dd");
+  endTime.value = format(new Date(2100, 0, 1), "yyyy-MM-dd");
+  statics.value = await httpPost( '/user.statics', { startTime:startTime.value, endTime:endTime.value })
+
+  // 定义禁止访问的日期（9月1日）
+  const RESTRICTED_DATE = new Date(2024, 8, 1); // 8 表示 9 月（月份从 0 开始）
+
+  // 获取当前日期
+  const now = new Date();
+  const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 检查当前日期是否在禁止访问日期之后
+  const isAfterRestrictedDate = currentDate > RESTRICTED_DATE;
+  console.log("time=>", isAfterRestrictedDate);
+  if (isAfterRestrictedDate) {
+    navigateTo({ url: '/pages/restricted/index' });
+  }
 });
 </script>

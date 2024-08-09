@@ -1,0 +1,41 @@
+{
+  "name": "yhstone-nodejs",
+  "version": "1.0.0",
+  "description": "```bash\r npm i\r ```",
+  "main": "src/manage.js",
+  "scripts": {
+    "dev": "nodemon src/manage.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "date-fns": "^3.3.1",
+    "dotenv": "^16.4.1",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "koa": "^2.15.0",
+    "koa-body": "^6.0.1",
+    "koa-router": "^12.0.1",
+    "koa2-cors": "^2.0.6",
+    "lodash-es-utils": "^2.0.9",
+    "lodash-utils": "^0.0.1-security",
+    "luxon": "^3.4.4",
+    "minio": "^7.1.3",
+    "mysql": "^2.18.1",
+    "nodemailer": "^6.9.13",
+    "querystring": "^0.2.1",
+    "redis": "^4.6.13",
+    "stream": "^0.0.2",
+    "uuid-random": "^1.3.2",
+    "wechat-pay-nodejs": "^0.2.3",
+    "ws": "^8.17.0"
+  },
+  "devDependencies": {
+    "eslint-config-google": "^0.14.0",
+    "nodemon": "^3.0.3"
+  }
+}

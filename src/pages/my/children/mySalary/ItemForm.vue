@@ -1,11 +1,20 @@
 <template>
   <nut-form>
-    <nut-form-item label="微信二维码">
-      <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'" v-model:file-list="wxqrcodeList" @success="handleUploadSuccess"></nut-uploader>
+
+    <nut-form-item label="收款码">
+      <nut-config-provider :theme-vars="themeVars">
+        <nut-grid :column-num="2" direction="horizontal">
+          <nut-grid-item text="微信">
+            <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'"
+              v-model:file-list="wxqrcodeList" @success="handleUploadSuccess" maximum="1"></nut-uploader></nut-grid-item>
+          <nut-grid-item text="支付宝">
+            <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'"
+              v-model:file-list="zfbqrcodeList" @success="handleUploadSuccess" maximum="1"></nut-uploader>
+          </nut-grid-item>
+        </nut-grid>
+      </nut-config-provider>
     </nut-form-item>
-    <nut-form-item label="支付宝二维码">
-      <nut-uploader :url="baseUrl + '/user.pay.qrcode.upload'" v-model:file-list="zfbqrcodeList" @success="handleUploadSuccess"></nut-uploader>
-    </nut-form-item>
+
     <nut-form-item label="收款人电话">
       <nut-input v-model="formData.phone" placeholder="请输入收款人电话" type="text" />
     </nut-form-item>
@@ -13,7 +22,7 @@
       <nut-input v-model="formData.name" placeholder="请输入收款人姓名" type="text" />
     </nut-form-item>
     <nut-form-item label="提现金额">
-      <nut-input v-model="formData.amount" placeholder="请输入提现金额" type="text" @input="calculateFees"/>
+      <nut-input v-model="formData.amount" placeholder="请输入提现金额" type="text" @input="calculateFees" />
     </nut-form-item>
     <nut-form-item label="提现手续费">
       <nut-input v-model="formData.fee" type="text" readonly />
@@ -63,14 +72,19 @@ const calculateFees = () => {
 // 监听提现金额变化
 watch(() => formData.value.amount, calculateFees);
 const handleUploadSuccess = (response: any) => {
-  console.log('',formData.value);
+  console.log('', formData.value);
   if (response && response.data) {
-    if(formData.value.qrcode_url == undefined){
+    if (formData.value.qrcode_url == undefined) {
       formData.value.qrcode_url = [response.data.data];
-    }else{
+    } else {
       formData.value.qrcode_url.push(response.data.data);
     }
-    
+
   }
 };
+
+const themeVars = ref({
+  uploaderPictureWidth: '30px',
+  uploaderPictureHeight: '30px'
+})
 </script>

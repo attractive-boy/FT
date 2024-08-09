@@ -90,6 +90,7 @@
         plain
         size="small"
         type="danger"
+        @click="reject"
         >拒绝</nut-button
       >
       <nut-button
@@ -97,6 +98,7 @@
         plain
         size="small"
         type="success"
+        @click="pass"
         >通过</nut-button
       >
     </div>
@@ -113,7 +115,9 @@
 import MyCell from "@/components/common/MyCell/index.vue";
 import { computed, ref } from "vue";
 import { timeFormat } from "@/utils/format";
+import httpPost from "@/utils/http";
 const TARO_APP_OSS = process.env.TARO_APP_OSS;
+import Taro from '@tarojs/taro';
 
 const props = defineProps<{ item: any }>();
 const showImg = ref(false);
@@ -130,4 +134,20 @@ const img_url = computed(() =>
     return { src: TARO_APP_OSS + item };
   })
 );
+const pass = async () => {
+  await httpPost("/report.pass", {
+    id: props.item.id,
+  });
+  Taro.reLaunch({
+    url: "/pages/index/children/reportHistory/index",
+  });
+}
+const reject = async () => {
+  await httpPost("/report.reject", {
+    id: props.item.id,
+  });
+  Taro.reLaunch({
+    url: "/pages/index/children/reportHistory/index",
+  });
+}
 </script>

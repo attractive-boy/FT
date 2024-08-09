@@ -24,7 +24,9 @@ export default defineAppConfig({
     "pages/manage/children/integral/index",
     "pages/my/children/mySalary/index",
     "pages/restricted/index",
-    "pages/manage/children/paySalaries/index"
+    "pages/manage/children/paySalaries/index",
+    "pages/bindwx/index",
+    "pages/my/children/myVip/children/index"
   ],
   window: {
     backgroundTextStyle: "light",

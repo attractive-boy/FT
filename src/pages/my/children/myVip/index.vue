@@ -1,15 +1,25 @@
 <template>
-  <view class="bg-gray-200 min-h-screen content">
-    <!-- 添加按钮 -->
-    <view class="w-1/2 m-2 mx-auto">
-      <nut-button block type="success" @click="addVip">添加会员</nut-button>
+  <view class="min-h-screen bg-gray-200 flex flex-col">
+    <view class="mx-2 bg-white rounded-md p-2" style="margin-top: .5rem;">
+      <view>
+        <!-- 搜索框 -->
+        <view class="flex items-center mb-2">
+          <view style="font-size: small;white-space: nowrap;">{{ searchType }}</view>
+          <nut-searchbar
+            class="ml-2"
+            :placeholder="searchPlaceholder"
+            v-model="queryString"
+            @input="searchName"
+            @search="searchName"
+          ></nut-searchbar>
+        </view>
+      </view>
     </view>
-    <!-- 项目表格 -->
     <div class="bg-white m-2">
       <nut-table
         class="w-full"
-        :columns="getColumns(getVip)"
-        :data="itemData"
+        :columns="getColumns()"
+        :data="filteredItemData"
       ></nut-table>
     </div>
   </view>
@@ -17,35 +27,70 @@
 
 <script lang="ts" setup>
 import httpPost from "@/utils/http";
-import { onMounted, ref } from "vue";
-import { getColumns } from "./columns";
-import { showActionSheet } from "@/components/MyActionSheet";
-import ItemForm from "./ItemForm.vue";
+import { onMounted, ref, watch } from "vue";
+import { h } from "vue";
+import { navigateTo } from "@tarojs/taro";
 
 const itemData = ref([]);
+const searchType = ref('会员老板');
+const searchPlaceholder = ref('搜索会员老板');
+const filteredItemData = ref([]);
+const queryString = ref('');
+
 const getVip = async () => {
   const result = await httpPost("/vip.get");
   itemData.value = result;
+  filteredItemData.value = result;
 };
-const addVip = () => {
-  showActionSheet({
-    title: "添加会员",
-    props: {
-      formData: {
-        name: "",
-      },
+
+const getColumns = () =>
+  [
+    {
+      title: "会员名",
+      stylecolumn: "width: 25%",
+      align: "center",
+      key: "name",
     },
-    renderContent: () => ItemForm,
-    beforeSure: async (done, options) => {
-      const { formData } = options.props;
-      if (await httpPost("/vip.add", formData)) {
-        await getVip();
-        done();
-      }
+    {
+      title: "所在群聊",
+      key: "group",
+      stylecolumn: "width: 25%",
+      align: "center",
     },
-  });
-};
+    {
+      title: "剩余金额",
+      stylecolumn: "width: 25%",
+      align: "center",
+      key: "amount",
+    },
+    {
+      title: "操作",
+      stylecolumn: "width: 25%",
+      align: "center",
+      render: (row) =>
+        h(
+          "span",
+          {
+            style: { cursor: "pointer", color: "#409EFF" },
+            onClick: () => {
+              const url = `/pages/my/children/myVip/children/index?id=${row.id}`;
+              navigateTo({ url });
+            }
+          },
+          '查看'
+        )
+    },
+  ];
+
 onMounted(async () => {
   await getVip();
 });
+
+
+const searchName = () => {
+  console.log(queryString.value);
+  filteredItemData.value = itemData.value.filter((item) => {
+    return item.name.toLowerCase().includes(queryString.value.toLowerCase());
+  });
+};
 </script>

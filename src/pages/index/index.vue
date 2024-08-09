@@ -88,7 +88,7 @@ import {
   RectRight,
 } from "@nutui/icons-vue-taro";
 import { h, onMounted } from "vue";
-import { redirectTo, navigateTo } from "@tarojs/taro";
+import { redirectTo, navigateTo, clearStorageSync } from "@tarojs/taro";
 
 const addNode = async () => {
   await httpPost("///");
@@ -110,6 +110,18 @@ onMounted(async () => {
   if (isAfterRestrictedDate) {
     navigateTo({ url: '/pages/restricted/index' });
   }
+
+  // 查看是否已经关联公众号
+  httpPost("/isBind").then((res) => {
+    if (!res.wechat_openid || res.wechat_openid.length < 1) {
+      navigateTo({ url: '/pages/bindwx/index' });
+    }
+    //如果返回401 清除缓存跳转登录
+    if (res.code === 401) {
+      clearStorageSync();
+      navigateTo({ url: '/pages/login/index' });
+    }
+})
 });
 const quickReport = () => {
   httpPost("/report.quick").then((res) => {
