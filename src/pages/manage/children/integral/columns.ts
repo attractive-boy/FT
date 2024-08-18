@@ -63,6 +63,19 @@ export const getColumns = (getItem: () => void) =>
                     renderContent: () => ItemForm,
                     beforeSure: async (done, options) => {
                       const { formData } = options.props;
+                      if(formData.nick_name == ""){
+                        inquiry("请输入昵称");
+                        return
+                      }
+                      if(!formData.transaction_type){
+                        inquiry("请选择调整类型");
+                        return
+                      }
+                      if(formData.amount == ""){
+                        inquiry("请输入调整积分");
+                        return
+                      }
+
                       //调整积分
                       if(formData.transaction_type == 2){
                         formData.amount = -formData.amount;
@@ -72,6 +85,8 @@ export const getColumns = (getItem: () => void) =>
                         await getItem();
                         done();
                       }
+
+                      Taro.reLaunch({ url: "/pages/manage/children/integral/index" });
                     },
                   });
                 }

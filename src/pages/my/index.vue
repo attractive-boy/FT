@@ -103,6 +103,7 @@
         block
         type="primary"
         plain
+        v-if="isAdmin"
         @click="navigateTo({ url: '/pages/manage/index' })"
       >
         管理中心
@@ -124,6 +125,7 @@ import { toFixed } from "@/utils/toFixed";
 import { onMounted } from "vue";
 const userInfo = getUserInfo();
 const selectedTab = ref(0);
+const isAdmin = ref(false);
 const statics = ref({
   income: 0,
   balance: 0,
@@ -200,5 +202,10 @@ onMounted(async () => {
   if (isAfterRestrictedDate) {
     navigateTo({ url: '/pages/restricted/index' });
   }
+
+  const checkAdmin = await httpPost('/isAdmin');
+  //判断角色名称是否带管理员
+  isAdmin.value = checkAdmin.includes("管理员");
+
 });
 </script>

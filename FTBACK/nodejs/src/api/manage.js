@@ -4,6 +4,7 @@ const router = new Router();
 const { tokenVerify, getUserId } = require("../middlewares");
 const { jsapi } = require("../wechat/index");
 const { postObject } = require("../minio/server");
+const { parseISO } = require("date-fns");
 const {
   startOfMonth,
   startOfWeek,
@@ -41,8 +42,8 @@ router.post("/pay", getUserId, async (ctx) => {
 
 // 添加项目
 router.post("/item.add", tokenVerify(superManager), async (ctx) => {
-  const { name, commission, rebate } = ctx.request.body;
-  await db("items").insert({ name, commission, rebate });
+  const { name, commission, rebate,hycommission,hyrebate } = ctx.request.body;
+  await db("items").insert({ name, commission, rebate,hycommission,hyrebate });
   ctx.send(202, "添加成功");
 });
 // 获取所有项目
@@ -106,8 +107,8 @@ router.post("/item.img.upload", async (ctx) => {
 
 // 添加项目
 router.post("/gift.add", tokenVerify(superManager), async (ctx) => {
-  const { name, commission, rebate } = ctx.request.body;
-  await db("gifts").insert({ name, commission, rebate });
+  const { name, commission, rebate,hycommission,hyrebate } = ctx.request.body;
+  await db("gifts").insert({ name, commission, rebate,hycommission,hyrebate });
   ctx.send(202, "添加成功");
 });
 // 获取所有项目
@@ -169,10 +170,49 @@ router.post("/vip.add", tokenVerify(clubMember), async (ctx) => {
 });
 // 获取会员
 router.post("/vip.get", tokenVerify(clubMember), async (ctx) => {
-  const belonged_id = ctx.state.id;
-  const data = await db("vips").where({ belonged_id, delete: 0 });
-  ctx.send(200, "", data);
+  try {
+    const belonged_id = ctx.state.id;
+    const { startDate, endDate, page = 1, pageSize = 10, queryString } = ctx.request.body;
+
+    const query = db("vips")
+      .join("reports", "vips.id", "=", "reports.vip_id")
+      .select("vips.*")
+      .distinct("vips.id")
+      .where({ "vips.belonged_id": belonged_id, "vips.delete": 0 });
+
+    // 只有在传递合法的 startDate 和 endDate 时，才添加时间过滤条件
+    if (startDate && endDate) {
+      const startTime = Math.floor(new Date(startDate).getTime() / 1000);
+      const endTime = Math.floor(new Date(endDate).getTime() / 1000);
+
+      // 如果时间是有效的，则添加时间过滤条件
+      if (!isNaN(startTime) && !isNaN(endTime)) {
+        query.whereBetween("reports.create_time", [startTime, endTime]);
+      }
+    }
+
+    // 如果 queryString 存在，添加搜索过滤条件
+    if (queryString) {
+      query.andWhere("vips.name", "like", `%${queryString}%`);
+    }
+
+    // 分页
+    const totalQuery = query.clone(); // 用于计算总记录数
+    const totalRecords = await totalQuery.countDistinct("vips.id as total");
+
+    const data = await query
+      .offset((page - 1) * pageSize)
+      .limit(pageSize);
+
+    ctx.send(200, "", {
+      data,
+      total: totalRecords[0].total, // 返回总记录数，用于分页
+    });
+  } catch (error) {
+    ctx.send(500, error.message);
+  }
 });
+
 // 获取会员列表
 router.post("/user.vips.list.get", tokenVerify(clubMember), async (ctx) => {
   const vipList = await db("users")
@@ -213,6 +253,7 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
       orderCount,
       owner,
       lose,
+      win,
       urls,
       boss,
       type,
@@ -226,12 +267,10 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
     const balance = (
       await db("users").where({ id: ctx.state.id }).first("points")
     ).points;
-    if (balance < amountNum) {
-      ctx.send(400, "积分不足");
-    } else {
+
       await db("users")
         .where({ id: ctx.state.id })
-        .update({ points: balance - total });
+        .update({ points: balance - commission });
       await db("reports").insert({
         create_time: Date.now() / 1000,
         user_id,
@@ -240,6 +279,7 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
         belonged_id: owner,
         boss: boss,
         lose: lose,
+        win: win,
         urls: JSON.stringify(urls),
         unit_price: unitPrice,
         order_count: orderCount,
@@ -270,7 +310,7 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
       // 发送模板消息
       const url = `https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=${accessToken}`;
       const openId = wxopenid; // 接收消息的用户的openId
-      const templateId = "vxac32zdsK-HQOAHSuFhmYPeGFlsUqDnKZ4B2POzf5Q"; // 你创建的模板ID
+      const templateId = "vxac32zdsK-HQOAHSuFhmXW_07XaOO5Eh59kUleg-hQ"; // 你创建的模板ID
       const now = new Date();
       const formattedDate = `${now.getFullYear()}-${String(
         now.getMonth() + 1
@@ -282,9 +322,10 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
       const data = {
         touser: openId,
         template_id: templateId,
-        miniprogram:{
-          "appid":"wx232fe1b0a8b67d43"
-        }, 
+        miniprogram: {
+          appid: "wx232fe1b0a8b67d43",
+          page: "pages/index/children/reportHistory/index",
+        },
         data: {
           thing11: {
             value: item_name,
@@ -295,7 +336,7 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
             color: "#173177",
           },
           short_thing3: {
-            value: 1,
+            value: order_name.slice(0, 2),
             color: "#173177",
           },
           amount8: {
@@ -311,14 +352,9 @@ router.post("/report", tokenVerify(clubMember), async (ctx) => {
 
       const template_result = await axios.post(url, data);
 
-      //如果是会员单 扣除会员余额
-      if (vip_id) {
-        await db("vips")
-          .where({ id: vip_id })
-          .update({ amount: db.raw("amount-" + order_money) });
-      }
+     
       ctx.send(200, template_result.data);
-    }
+
   } catch (e) {
     ctx.send(400, e.message);
   }
@@ -330,24 +366,44 @@ router.post("/report.pass", tokenVerify(clubMember), async (ctx) => {
     const { id } = ctx.request.body;
     //查询报备单数据
     const report = await db("reports").where({ id }).first();
+    const userId = ctx.state.id;
     // 将总价 - 抽成 给 归属人
-    await db("users")
-      .where({ id: report.belonged_id })
-      .update({
-        points: db.raw("points+" + report.income),
-      });
+    // await db("users")
+    //   .where({ id: report.belonged_id })
+    //   .update({
+    //     points: db.raw("points+" + report.income),
+    //   });
 
     //将返点给接单人
+    // await db("users")
+    //   .where({ id: report.user_id })
+    //   .update({
+    //     points: db.raw("points+" + report.rebate),
+    //   });
+    //扣减前判断是否有足够余额
+    if (
+      (await db("users").where({ id: userId }).first("points")) < report.income
+    ) {
+      ctx.send(400, "余额不足");
+      return;
+    }
     await db("users")
-      .where({ id: report.user_id })
+      .where({ id: userId })
       .update({
-        points: db.raw("points+" + report.rebate),
+        points: db.raw("points-" + report.income),
       });
 
     //将状态改成 已审核
     await db("reports").where({ id }).update({
       status: "已审核",
     });
+
+     //如果是会员单 扣除会员余额
+     if (report.vip_id) {
+      await db("vips")
+        .where({ id: report.vip_id })
+        .update({ amount: db.raw("amount-" + report.total) });
+    }
 
     //发送消息模板通知
     // 获取access_token
@@ -385,9 +441,10 @@ router.post("/report.pass", tokenVerify(clubMember), async (ctx) => {
     const data = {
       touser: openId,
       template_id: templateId,
-      miniprogram:{
-        "appid":"wx232fe1b0a8b67d43"
-      }, 
+      miniprogram: {
+        appid: "wx232fe1b0a8b67d43",
+        page: "pages/index/children/reportHistory/index",
+      },
       data: {
         thing11: {
           value: report_name,
@@ -477,9 +534,10 @@ router.post("/report.reject", tokenVerify(clubMember), async (ctx) => {
     const data = {
       touser: openId,
       template_id: templateId,
-      miniprogram:{
-        "appid":"wx232fe1b0a8b67d43"
-      }, 
+      miniprogram: {
+        appid: "wx232fe1b0a8b67d43",
+        page: "pages/index/children/reportHistory/index",
+      },
       data: {
         thing11: {
           value: report_name,
@@ -527,37 +585,60 @@ router.post("/user.statics", tokenVerify(clubMember), async (ctx) => {
     ).points;
 
     // 查询接单量 接单额
+    // const reportCount = await db("reports")
+    //   .where({ belonged_id: user_id, status: "已审核" })
+    //   .whereBetween("create_time", [start, end])
+    //   .count("id as count")
+    //   .first();
+    // const reportAmount = await db("reports")
+    //   .where({ belonged_id: user_id, status: "已审核" })
+    //   .whereBetween("create_time", [start, end])
+    //   .sum("total as total")
+    //   .first();
     const reportCount = await db("reports")
-      .where({ belonged_id: user_id, status: "已审核" })
+      .where({ user_id, status: "已审核" })
       .whereBetween("create_time", [start, end])
-      .count("id as count")
+      .sum("order_count as count")
       .first();
-    const reportAmount = await db("reports")
-      .where({ belonged_id: user_id, status: "已审核" })
-      .whereBetween("create_time", [start, end])
-      .sum("total as total")
-      .first();
+      const reportAmount = await db("reports")
+        .where({ user_id, status: "已审核" })
+        .whereBetween("create_time", [start, end])
+        .sum("total as total")
+        .first();
 
     // 点单量 点单额
+    // const orderCount = await db("reports")
+    //   .where({ user_id, status: "已审核" })
+    //   .whereBetween("create_time", [start, end])
+    //   .count("id as count")
+    //   .first();
+    // const orderAmount = await db("reports")
+    //   .where({ user_id, status: "已审核" })
+    //   .whereBetween("create_time", [start, end])
+    //   .sum("total as total")
+    //   .first();
     const orderCount = await db("reports")
-      .where({ user_id, status: "已审核" })
+      .where({ belonged_id: user_id, status: "已审核" })
       .whereBetween("create_time", [start, end])
-      .count("id as count")
+      .sum("order_count as count")
       .first();
-    const orderAmount = await db("reports")
-      .where({ user_id, status: "已审核" })
-      .whereBetween("create_time", [start, end])
-      .sum("total as total")
-      .first();
+      const orderAmount = await db("reports")
+      .where({ belonged_id: user_id, status: "已审核" })
+        .whereBetween("create_time", [start, end])
+        .sum("total as total")
+        .first();
 
     // 抽成合计 返点合计
     const reportTotal = await db("reports")
       .where({ user_id, status: "已审核" })
+      // .where({ belonged_id: user_id, status: "已审核" })
       .whereBetween("create_time", [start, end])
       .sum("commission as total")
       .first();
     const commissionTotal = await db("reports")
+    // .where({ user_id, status: "已审核" })
       .where({ belonged_id: user_id, status: "已审核" })
+      .whereBetween("create_time", [start, end])
       .sum("rebate as total")
       .first();
 
@@ -611,7 +692,7 @@ router.post("/club.statics", tokenVerify(clubMember), async (ctx) => {
         db.raw("SUM(total) as totalOrderAmount"),
         db.raw("SUM(commission) as totalOrderCommission"),
         db.raw("SUM(rebate) as totalOrderRebate"),
-        db.raw("COUNT(id) as totalOrderCount")
+        db.raw("SUM(order_count) as totalOrderCount")
       )
       .first();
 
@@ -623,7 +704,7 @@ router.post("/club.statics", tokenVerify(clubMember), async (ctx) => {
         db.raw("SUM(total) as totalGiftAmount"),
         db.raw("SUM(commission) as totalGiftCommission"),
         db.raw("SUM(rebate) as totalGiftRebate"),
-        db.raw("COUNT(id) as totalGiftCount")
+        db.raw("SUM(order_count) as totalGiftCount")
       )
       .first();
 
@@ -639,7 +720,7 @@ router.post("/club.statics", tokenVerify(clubMember), async (ctx) => {
       (orderInfo.totalOrderAmount ?? 0) + (giftInfo.totalGiftAmount ?? 0);
 
     // 计算俱乐部纯收益
-    const clubIncome = totalRevenue - totalCommission + totalRebate;
+    const clubIncome = totalCommission - totalRebate;
 
     const totalOrderAndGiftCount =
       (orderInfo.totalOrderCount ?? 0) + (giftInfo.totalGiftCount ?? 0);
@@ -896,7 +977,7 @@ router.post("/report.salary.get", async (ctx) => {
 //发放工资 /user.payment.update
 router.post("/user.payment.update", async (ctx) => {
   try {
-    await db("users").where({ id: ctx.request.body.id }).update({
+    await db("salary_records").where({ id: ctx.request.body.id }).update({
       status: ctx.request.body.status,
     });
     ctx.send(200, "发放成功");
@@ -908,5 +989,83 @@ router.post("/user.payment.update", async (ctx) => {
   }
 });
 //
+// 查询审核记录接口
+router.post('/user.getApprovalRecords', async (ctx) => {
+  try {
+    const { page = 1, pageSize = 10, status, filter, rangedate } = ctx.request.body;
+    const [startDate, endDate] = rangedate ? rangedate.split(',') : [];
+
+    const offset = (page - 1) * pageSize;
+
+    const query = db('approval_records')
+      .where('timestamp', '>=', startDate || '1970-01-01')
+      .andWhere('timestamp', '<=', endDate || '9999-12-31');
+
+    if (status && status !== '全部') {
+      query.andWhere('action', status);
+    }
+
+    if (filter && filter !== '全部') {
+      // 处理其他过滤条件
+    }
+
+    const total = await db('approval_records').count('* as count');
+    const records = await query.offset(offset).limit(pageSize).select('*');
+
+    ctx.send(200, '', { records, total });
+  } catch (error) {
+    ctx.send(500, error.message);
+  }
+});
+
+// 修改余额接口
+router.post('/vip.update', async (ctx) => {
+  const { id, amount } = ctx.request.body;
+  try {
+    // 查询当前余额
+    const [currentRecord] = await db('vips').where({ id }).select('amount');
+    if (!currentRecord) {
+      return res.status(404).json({ success: false, message: '会员未找到' });
+    }
+
+    // 计算新的余额
+    const newAmount = currentRecord.amount + amount;
+
+    // 更新余额
+    await db('vips').where({ id }).update({ amount: newAmount });
+    ctx.send(200, '余额更新成功');
+  } catch (error) {
+    console.error('余额更新失败:', error);
+    ctx.send(500, error.message);
+  }
+});
+
+router.post("/boss.get", tokenVerify(clubMember), async (ctx) => {
+  try {
+    const { id } = ctx.request.body;
+
+    if (!id) {
+      ctx.send(400, "ID is required");
+      return;
+    }
+
+    // 从数据库中获取老板的信息
+    const boss = await db("vips").where({ id }).first();
+
+    if (!boss) {
+      ctx.send(404, "Boss not found");
+      return;
+    }
+
+    // 返回老板的名字和余额
+    ctx.send(200, "Boss data fetched successfully", {
+      name: boss.name,
+      amount: boss.amount
+    });
+  } catch (error) {
+    console.error("Error fetching boss data:", error);
+    ctx.send(500, "Internal server error");
+  }
+});
 
 module.exports = router;

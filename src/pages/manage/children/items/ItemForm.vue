@@ -14,10 +14,24 @@
         type="number"
       />
     </nut-form-item>
+    <nut-form-item label="会员抽成">
+      <nut-input
+        v-model="formData.hycommission"
+        placeholder="请输入会员抽成 / %"
+        type="number"
+      />
+    </nut-form-item>
     <nut-form-item label="返点">
       <nut-input
         v-model="formData.rebate"
         placeholder="请输入返点 / %"
+        type="number"
+      />
+    </nut-form-item>
+    <nut-form-item label="会员返点">
+      <nut-input
+        v-model="formData.hyrebate"
+        placeholder="请输入会员返点 / %"
         type="number"
       />
     </nut-form-item>
@@ -32,11 +46,13 @@ export interface FormProps {
     name: string;
     commission: number | null;
     rebate: number | null;
+    hycommission: number | null;
+    hyrebate: number | null;
   };
 }
 
 const props = withDefaults(defineProps<FormProps>(), {
-  formData: () => ({ name: "", commission: null, rebate: null }),
+  formData: () => ({ name: "", commission: null, rebate: null, hycommission: null, hyrebate: null }),
 });
 
 const formData = ref(props.formData);

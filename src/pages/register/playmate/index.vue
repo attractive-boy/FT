@@ -21,24 +21,17 @@
           </div>
         </nut-form-item>
         <nut-form-item label="昵称" :label-width="50">
-          <nut-input v-model="formData.nick_name" placeholder="请输入姓名" type="nickname" @blur="onBlur" />
+          <nut-input v-model="formData.nick_name" placeholder="请输入昵称" type="nickname" @blur="onBlur" />
         </nut-form-item>
         <nut-form-item label="性别" :label-width="50">
           <nut-radio-group v-model="formData.gender" direction="horizontal">
-            <nut-radio label="未知">未知</nut-radio>
             <nut-radio label="男">男</nut-radio>
             <nut-radio label="女">女</nut-radio>
           </nut-radio-group>
         </nut-form-item>
-        <nut-form-item label="生日" :label-width="50">
-          <nut-button plain size="mini" type="default" @click="showDatePicker">
-            {{ format(formData.birthday, "yyyy-MM-dd") }}
-          </nut-button>
-        </nut-form-item>
         <nut-form-item label="联系电话" :label-width="50">
           <nut-input v-model="formData.phone" placeholder="请输入联系电话" type="tel" />
         </nut-form-item>
-
       </nut-form>
     </div>
     <div
@@ -49,31 +42,62 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
-import { onMounted, reactive } from "vue";
-import { format } from "date-fns";
+import { reactive } from "vue";
 import Taro from "@tarojs/taro";
 import httpPost from "@/utils/http";
 
+// 定义表单数据
 const formData = reactive({
   avatar_url: "",
   nick_name: "", // 姓名
-  gender: "未知", //
-  birthday: new Date(2000, 0, 1), // 联系电话
-  phone: "",
+  gender: "未知", // 性别
+  phone: "", // 联系电话
 });
 
+// 显示日期选择器的函数（未使用）
 const showDatePicker = () => {
   console.log(1);
 };
+
+// 提交注册申请的函数
 const applyRegister = async () => {
-  const res = await Taro.login();
-  console.log(formData);
-  if (await httpPost("/apply.register", { ...formData, code: res.code })) {
+  // 验证所有字段
+  if (!formData.avatar_url) {
+    Taro.showToast({ title: '请上传头像', icon: 'none' });
+    return;
+  }
+  if (!formData.nick_name) {
+    Taro.showToast({ title: '请输入昵称', icon: 'none' });
+    return;
+  }
+  if (formData.gender === "未知") {
+    Taro.showToast({ title: '请选择性别', icon: 'none' });
+    return;
+  }
+  if (!formData.phone) {
+    Taro.showToast({ title: '请输入联系电话', icon: 'none' });
+    return;
+  }
+
+  try {
+    const res = await Taro.login();
+    console.log(formData);
+    const result = await httpPost("/apply.register", { ...formData, code: res.code });
     Taro.reLaunch({ url: "/pages/index/index" });
+    // if (result.success) {
+     
+    // } else {
+    //   Taro.showToast({ title: '注册失败', icon: 'none' });
+    // }
+  } catch (error) {
+    // Taro.showToast({ title: '注册失败', icon: 'none' });
+    console.error('注册失败:', error);
   }
 };
 
+// 处理选择头像的函数
 const onChooseAvatar = (e: any) => {
   const requestUrl = `${process.env.TARO_APP_BASE_URL}/upload.avatar`;
   console.log(requestUrl);
@@ -82,17 +106,15 @@ const onChooseAvatar = (e: any) => {
     filePath: e.detail.avatarUrl,
     name: "file",
     success(res) {
-      formData.avatar_url = `${process.env.TARO_APP_OSS}${res.data}`
+      formData.avatar_url = `${process.env.TARO_APP_OSS}${res.data}`;
     },
   });
 };
+
+// 处理昵称输入框失去焦点事件
 const onBlur = (e: any) => {
   formData.nick_name = e.detail.value;
 };
-
-onMounted(async () => {
-
-});
 </script>
 
 <style>

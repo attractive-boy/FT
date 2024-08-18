@@ -26,7 +26,17 @@ export default defineAppConfig({
     "pages/restricted/index",
     "pages/manage/children/paySalaries/index",
     "pages/bindwx/index",
-    "pages/my/children/myVip/children/index"
+    
+    "pages/manage/children/integral/children/index",
+    "pages/manage/children/audit/index",
+    "pages/qrcode/index"
+  ],
+  // "pages/my/children/myVip/children/index", 分包
+  subpackages: [
+    {
+      root: "pages/my/children/myVip/children",
+      pages: ["index"],
+    },
   ],
   window: {
     backgroundTextStyle: "light",

@@ -12,7 +12,7 @@ export const getColumns = (getItem: () => void) =>
   [
     {
       title: "序号",
-      key: "id",
+      key: "index",
       stylecolumn: "width: 25vw",
       align: "center",
     },

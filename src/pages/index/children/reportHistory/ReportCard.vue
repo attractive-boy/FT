@@ -41,7 +41,7 @@
       </div>
     </div>
     <div class="flex mt-2 flex-wrap gap-1">
-      <MyCell k="老板：" :v="item.boss" style="flex: 1 1 calc(50% - 10px)" />
+      <MyCell k="老板：" :v="item.vip_name || item.boss" style="flex: 1 1 calc(50% - 10px)" />
       <MyCell
         k="单价："
         :v="item.unit_price"
@@ -53,10 +53,11 @@
         style="flex: 1 1 calc(50% - 10px)"
       />
       <MyCell k="总价：" :v="total" style="flex: 1 1 calc(50% - 10px)" />
-      <MyCell k="胜场：" :v="win" style="flex: 1 1 calc(50% - 10px)" />
+      <MyCell v-if="item.type === 'item'"  k="胜场：" :v="win" style="flex: 1 1 calc(50% - 10px)" />
       <MyCell
+        v-if="item.type === 'item'"
         k="胜率："
-        :v="win_rate + '%'"
+        :v="toFixed(win_rate,2) + '%'"
         style="flex: 1 1 calc(50% - 10px)"
       />
       <MyCell k="抽成：" :v="commission" style="flex: 1 1 calc(50% - 10px)" />
@@ -69,7 +70,7 @@
       <MyCell k="报备时间：" :v="timeFormat(item.create_time)" class="w-full" />
       <MyCell k="订单号：" v="882d3208-1e05-4336-8d62" class="w-full" />
     </div>
-    <div class="flex justify-around mt-2">
+    <div class="flex justify-around mt-2" v-if="props.showOperation">
       <nut-button
         style="--nut-button-border-radius: 8px"
         plain
@@ -118,8 +119,13 @@ import { timeFormat } from "@/utils/format";
 import httpPost from "@/utils/http";
 const TARO_APP_OSS = process.env.TARO_APP_OSS;
 import Taro from '@tarojs/taro';
+import { toFixed } from "@/utils/toFixed";
+import ItemForm from "@/pages/manage/children/gift/ItemForm.vue";
 
-const props = defineProps<{ item: any }>();
+const props = defineProps<{
+  item: any;
+  showOperation: boolean;
+}>();
 const showImg = ref(false);
 
 const total = computed(() => props.item?.unit_price * props.item?.order_count);
@@ -127,20 +133,47 @@ const commission = computed(
   () => total.value * (props.item?.commission || 0) * 0.01
 );
 const rebate = computed(() => total.value * (props.item?.rebate || 0) * 0.01);
-const win = computed(() => props.item.order_count - props.item.lose || 0);
-const win_rate = computed(() => (win.value / props.item.order_count) * 100);
+const win = computed(() => props.item.win > 0 ?  props.item.win : props.item.order_count - props.item.lose || 0);
+const win_rate = computed(() => (win.value / (props.item.win > 0 ? (props.item.win  + props.item.lose) : props.item.order_count)) * 100);
 const img_url = computed(() =>
   JSON.parse(props.item.urls).map((item) => {
     return { src: TARO_APP_OSS + item };
   })
 );
 const pass = async () => {
-  await httpPost("/report.pass", {
-    id: props.item.id,
-  });
-  Taro.reLaunch({
-    url: "/pages/index/children/reportHistory/index",
-  });
+  // 改单子是否低于50胜率，低于50的话，弹窗提示显示文本“该单子胜率低于50，疑似炸单，请联系俱乐部管理人员处理，确定通过该单子审批通过”然后下面就是两个按钮一个取消，一个确认通过
+  if ( ItemForm.value.type === "item" && win_rate.value < 50) {
+    Taro.showModal({
+      title: "提示",
+      content: "该单子胜率低于50，疑似炸单，请联系俱乐部管理人员处理，确定通过该单子审批通过",
+      success: async (res) => {
+        if (res.confirm) {
+          const res1 = await httpPost("/report.pass", {
+            id: props.item.id,
+          })
+          if(res1 == "余额不足"){
+            Taro.showToast({
+              title: "余额不足",
+              icon: "error",
+              duration: 2000
+            })
+          }
+          Taro.reLaunch({
+            url: "/pages/index/children/reportHistory/index",
+          });
+        }
+      }
+    })
+  }else{
+    await httpPost("/report.pass", {
+      id: props.item.id,
+    })
+    Taro.reLaunch({
+      url: "/pages/index/children/reportHistory/index",
+    });
+  }
+  
+  
 }
 const reject = async () => {
   await httpPost("/report.reject", {

@@ -38,10 +38,18 @@
         <MyNumPickerCell
           v-if="formData.item === 1"
           style="--nut-cell-color: #f56c6c"
+          title="胜利局数"
+          v-model.number="formData.win"
+          :min="0"
+
+        />
+        <MyNumPickerCell
+        v-if="formData.item === 1"
+          style="--nut-cell-color: #f56c6c"
           title="失败局数"
           v-model.number="formData.lose"
           :min="0"
-          :max="formData.orderCount"
+
         />
         <MyPickerCell
           title="归属人"
@@ -88,7 +96,7 @@
         </div>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
-        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(total, 2) }}</b> 积分</span>
+        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(commission, 2) }}</b> 积分</span>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
         <span class="text-sm text-gray-500" style="padding: 1rem 0;">您当前剩余 <b class="text-blue-500">{{ toFixed(myPoints, 2) }}</b> 积分</span>
@@ -106,7 +114,7 @@
 import MyPickerCell from "@/components/MyComponents/MyPickerCell.vue";
 import MyDatePickerCell from "@/components/MyComponents/MyDatePickerCell.vue";
 import MyNumPickerCell from "@/components/MyComponents/MyNumPickerCell.vue";
-import MyUpload from "@/components/MyComponents/MyUpload.vue";
+import MyUpload from "@/components/MyComponents/MyUploadzj.vue";
 import httpPost from "@/utils/http";
 import { computed, onMounted, ref } from "vue";
 import { toFixed } from "@/utils/toFixed";
@@ -122,6 +130,7 @@ const formData = ref({
   orderCount: 0,
   owner: 0,
   boss: "",
+  win: 0,
   lose: 0,
   urls: [],
   vip_id: 0,
@@ -136,12 +145,25 @@ const selectItem = computed(() =>
 const total = computed(
   () => formData.value.unitPrice * formData.value.orderCount
 );
-const commission = computed(
-  () => total.value * (selectItem?.value?.commission || 0) * 0.01
-);
-const rebate = computed(
-  () => total.value * (selectItem?.value?.rebate || 0) * 0.01
-);
+const commission = computed(() => {
+  const item = selectItem.value;
+  if (isVip.value) {
+
+      return total.value * (item?.hycommission || 0) * 0.01;
+
+  } else {
+    return total.value * (item?.commission || 0) * 0.01;
+  }
+});
+const rebate = computed(() => {
+  const item = selectItem.value;
+  if (isVip.value) {
+      return total.value * (item?.hyrebate || 0) * 0.01;
+  } else {
+    return total.value * (item?.rebate || 0) * 0.01;
+  }
+});
+
 const income = computed(() => total.value - commission.value);
 
 const myPoints = ref(0);
@@ -176,25 +198,64 @@ const myPoints = ref(0);
 // };
 
 const reportPay = async () => {
-  if (myPoints.value < toFixed(total.value, 2)) {
+  // 验证必填字段
+  if (!formData.value.startTime) {
+    message("请选择开始接单时间", { icon: "error" });
+    return;
+  }
+  if (!formData.value.item) {
+    message("请选择品类", { icon: "error" });
+    return;
+  }
+  if (!formData.value.unitPrice || formData.value.unitPrice <= 0) {
+    message("请输入有效的每单价格", { icon: "error" });
+    return;
+  }
+  if (!formData.value.orderCount || formData.value.orderCount <= 0) {
+    message("请输入有效的单子数量", { icon: "error" });
+    return;
+  }
+  if (isVip.value && !formData.value.owner) {
+    message("请选择归属人", { icon: "error" });
+    return;
+  }
+  // if (formData.value.item === 1 && formData.value.orderCount < formData.value.lose) {
+  //   message("失败局数不能大于单子数量", { icon: "error" });
+  //   return;
+  // }
+  // if (formData.value.item === 1 && formData.value.orderCount < formData.value.win) {
+  //   message("成功局数不能大于单子数量", { icon: "error" });
+  //   return;
+  // }
+  if (myPoints.value < toFixed(commission.value, 2)) {
     message("您的积分不足，请先充值", { icon: "error" });
     return;
   }
+  if(isVip.value && (formData.value.vip_id == 0 || formData.value.vip_id == null || formData.value.vip_id == undefined)){
+    message("请选择会员老板", { icon: "error" });
+    return
+  }
+    
+  if(MyUploadRef.value.fileList.length === 0){
+    message("请上传战绩", { icon: "error" });
+    return;
+  }
+  formData.value.urls = MyUploadRef.value.fileList.map((item) => item.url);
+  // 提交数据
   await httpPost("/report", {
-          formData: { ...formData.value, type: "item",
-          // 总金额
-          total:toFixed(total.value, 2),
-          // 抽成
-          commission:toFixed(commission.value, 2),
-          // 返点
-          rebate:toFixed(rebate.value, 2),
-          // 收益
-          income:toFixed(income.value, 2)
-          
-           },
-    })
+    formData: { ...formData.value, type: "item",
+      // 总金额
+      total: toFixed(total.value, 2),
+      // 抽成
+      commission: toFixed(commission.value, 2),
+      // 返点
+      rebate: toFixed(rebate.value, 2),
+      // 收益
+      income: toFixed(income.value, 2)
+    },
+  });
 
-    Taro.switchTab({ url: "/pages/index/index" });
+  Taro.switchTab({ url: "/pages/index/index" });
 };
 const getUserList = async () => {
   userList.value = await httpPost("/user.vips.list.get");
@@ -218,6 +279,7 @@ onMounted(async () => {
         owner: data.belonged_id,
         boss: data.boss,
         lose: data.lose,
+        win: data.win,
         urls: data.urls,
         vip_id: data.vip_id,
       }

@@ -12,11 +12,11 @@
     <!-- 添加按钮 -->
     <view class="w-auto rounded-md m-2 px-2 bg-white">
       <nut-grid :column-num="2" :clickable="true" :border="false">
-        <nut-grid-item text="管理调整积分" @click="navigateTo({ url: '/pages/manage/children/integral/index' })">
+        <nut-grid-item text="管理调整积分" @click="navigateTo({ url: '/pages/manage/children/integral/children/index?type=1' })">
           <Dongdong />
         </nut-grid-item>
         <!-- 自行充值积分 -->
-        <nut-grid-item text="自行充值积分" @click="navigateTo({ url: '/pages/manage/children/integral/index' })">
+        <nut-grid-item text="自行充值积分" @click="navigateTo({ url: '/pages/manage/children/integral/children/index?type=2' })">
           <Dongdong />
         </nut-grid-item>
       </nut-grid>

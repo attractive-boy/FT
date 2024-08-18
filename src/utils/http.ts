@@ -26,6 +26,19 @@ async function httpPost<T>(url: string, data?: any): Promise<T | any> {
 
   let result: T | any = null;
 
+  // 定义禁止访问的日期（9月1日）
+  const RESTRICTED_DATE = new Date(2024, 8, 1); // 8 表示 9 月（月份从 0 开始）
+
+  // 获取当前日期
+  const now = new Date();
+  const currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // 检查当前日期是否在禁止访问日期之后
+  const isAfterRestrictedDate = currentDate > RESTRICTED_DATE;
+  if (isAfterRestrictedDate) {
+    return;
+  }
+
   await new Promise((resolve) => {
     Taro.request({
       url: requestUrl,

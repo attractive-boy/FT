@@ -38,7 +38,7 @@
         <MyPickerCell
           title="归属人"
           v-model="formData.owner"
-          :field-names="{ text: 'nick_name', value: 'id' }"
+          :field-names="{ text: 'user_name', value: 'user_id' }"
           :columns="userList"
         >
           <template #top>
@@ -79,7 +79,7 @@
         </div>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
-        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(total, 2) }}</b> 积分</span>
+        <span class="text-sm text-gray-500" style="padding: 1rem 0;">本次报备需要消耗 <b class="text-blue-500">{{ toFixed(commission, 2) }}</b> 积分</span>
       </div>
       <div class="shadow-lg p-1 flex justify-around w-full rounded-lg">
         <span class="text-sm text-gray-500" style="padding: 1rem 0;">您当前剩余 <b class="text-blue-500">{{ toFixed(myPoints, 2) }}</b> 积分</span>
@@ -125,45 +125,94 @@ const selectItem = computed(() =>
 const total = computed(
   () => formData.value.unitPrice * formData.value.orderCount
 );
-const commission = computed(
-  () => total.value * (selectItem?.value?.commission || 0) * 0.01
-);
-const rebate = computed(
-  () => total.value * (selectItem?.value?.rebate || 0) * 0.01
-);
+
+const commission = computed(() => {
+  const item = selectItem.value;
+  if (isVip.value) {
+
+      return total.value * (item?.hycommission || 0) * 0.01;
+
+  } else {
+    return total.value * (item?.commission || 0) * 0.01;
+  }
+});
+const rebate = computed(() => {
+  const item = selectItem.value;
+  if (isVip.value) {
+      return total.value * (item?.hyrebate || 0) * 0.01;
+  } else {
+    return total.value * (item?.rebate || 0) * 0.01;
+  }
+});
 const income = computed(() => total.value - commission.value);
 
 const reportPay = async () => {
-  if (myPoints.value < toFixed(total.value, 2)) {
+  // 验证必填字段
+  if (!formData.value.startTime) {
+    message("请选择收礼时间", { icon: "error" });
+    return;
+  }
+  if (!formData.value.item) {
+    message("请选择礼物", { icon: "error" });
+    return;
+  }
+  if (!formData.value.unitPrice || formData.value.unitPrice <= 0) {
+    message("请输入有效的礼物单价", { icon: "error" });
+    return;
+  }
+  if (!formData.value.orderCount || formData.value.orderCount <= 0) {
+    message("请输入有效的礼物数量", { icon: "error" });
+    return;
+  }
+  if (isVip.value && !formData.value.owner) {
+    message("请选择归属人", { icon: "error" });
+    return;
+  }
+  console.log("vipid=====>",formData.value.vip_id);
+  if(isVip.value && (formData.value.vip_id == 0 || formData.value.vip_id == null || formData.value.vip_id == undefined)){
+    message("请选择会员老板", { icon: "error" });
+    return
+  }
+
+  // 验证积分是否足够
+  if (myPoints.value < toFixed(commission.value, 2)) {
     message("您的积分不足，请先充值", { icon: "error" });
     return;
   }
-  if (
-    await httpPost("/report", {
-          formData: { ...formData.value, type: "item",
-          // 总金额
-          total: toFixed(total.value, 2),
-          // 抽成
-          commission: toFixed(commission.value, 2),
-          // 返点
-          rebate: toFixed(rebate.value, 2),
-          // 收益
-          income: toFixed(income.value, 2),
-          // 积分
-          amount: toFixed(commission.value, 2),
-          
-           },
-    })
-  ) {
-    
-  }
 
-  Taro.switchTab({ url: "/pages/index/index" });
+  // 提交数据
+  try {
+    const response = await httpPost("/report", {
+      formData: {
+        ...formData.value,
+        type: "gift",
+        // 总金额
+        total: toFixed(total.value, 2),
+        // 抽成
+        commission: toFixed(commission.value, 2),
+        // 返点
+        rebate: toFixed(rebate.value, 2),
+        // 收益
+        income: toFixed(income.value, 2),
+        // 积分
+        amount: toFixed(commission.value, 2),
+      },
+    });
+    
+    // 切换到首页
+    Taro.switchTab({ url: "/pages/index/index" });
+  } catch (error) {
+    console.error("提交报告失败:", error);
+    message("提交失败，请重试", { icon: "error" });
+  }
 };
+// const getUserList = async () => {
+//   userList.value = await httpPost("/user.list.get", {
+//     queryString: queryStringForUser.value,
+//   });
+// };
 const getUserList = async () => {
-  userList.value = await httpPost("/user.list.get", {
-    queryString: queryStringForUser.value,
-  });
+  userList.value = await httpPost("/user.vips.list.get");
 };
 
 onMounted(async () => {

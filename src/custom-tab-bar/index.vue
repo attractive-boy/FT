@@ -42,7 +42,13 @@ const tabSwitch = (item: any) => {
   const pagePath : any = List.find(i => i.name === item.name).pagePath;
   // 切换 Tab 页
   Taro.switchTab({
-    url: pagePath
+    url: pagePath,
+    success: () => {
+      //强制刷新
+      Taro.reLaunch({
+        url: pagePath,
+      });
+    },
   });
   // 更新当前激活的 Tab
   activeName.value = item.name;

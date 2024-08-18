@@ -24,18 +24,30 @@ export const getColumns = (getItem: () => void) =>
     {
       title: "抽成",
       key: "commission",
-      stylecolumn: "width: 25%",
+      stylecolumn: "width: 10%",
+      align: "center",
+    },
+    {
+      title: "会员抽成",
+      key: "hycommission",
+      stylecolumn: "width: 20%",
       align: "center",
     },
     {
       title: "返点",
       key: "rebate",
-      stylecolumn: "width: 25%",
+      stylecolumn: "width: 10%",
+      align: "center",
+    },
+    {
+      title: "会员返点",
+      key: "hyrebate",
+      stylecolumn: "width: 20%",
       align: "center",
     },
     {
       title: "操作",
-      stylecolumn: "width: 25%",
+      stylecolumn: "width: 15%",
       align: "center",
       render: (row) =>
         h(MoreX, {

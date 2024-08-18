@@ -21,6 +21,7 @@ import Taro from '@tarojs/taro';
 import httpPost from '@/utils/http';
 import MyDateRangePicker from "@/components/TimeRangePicker/index.vue";
 
+
 // 表格列配置
 const columns = ref([
   { title: '消费日期', key: 'create_time', stylecolumn: 'width: 25%', align: 'center' },
@@ -80,12 +81,23 @@ const fetchData = async () => {
 
     const response = await httpPost('/user.consume.list', params);
     data.value = response; // 假设返回的数据结构是数组
+    //获取老板的余额以及名称
+    const boss = await httpPost('/boss.get', { id });
+    customerName.value = boss.name;
+    customerAmount.value = boss.amount;
   } catch (error) {
     console.error('获取数据失败:', error);
   }
 };
 
-const exportToExcel = () => {
+// Main export function
+const exportToExcel = async () => {
+  const ExcelJs = require('exceljs');
+  // Create a new workbook and worksheet
+  const workbook = new ExcelJs.Workbook();
+  const worksheet = workbook.addWorksheet('消费账单');
+
+  // Define worksheet data
   const worksheetData = [
     ['FT俱乐部消费账单明细表'],
     [`${customerName.value} 消费后余额: ${customerAmount.value}`],
@@ -98,38 +110,104 @@ const exportToExcel = () => {
       item.user_name,
       item.total
     ]),
-    [`总消费 ${data.value.reduce((total, item) => total + item.total, 0)}`]
+    ['', '', '', '', `总消费${data.value.reduce((total, item) => total + item.total, 0)}`, ``] // Total Consumption Row
   ];
 
-  const XLSX = require('xlsx');
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+  // Add rows to the worksheet
+  worksheet.addRows(worksheetData);
 
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  // Merge cells
+  worksheet.mergeCells('A1:F1'); // Title
+  worksheet.mergeCells('A2:F2'); // Subtitle
+  worksheet.mergeCells(`E${worksheetData.length}:F${worksheetData.length}`); // Total Consumption
 
-  // 保存文件并分享
+  // Define styles
+  const titleStyle = {
+    font: { bold: true, size: 16, color: { argb: 'FF000000' } },
+    alignment: { horizontal: 'center', vertical: 'middle' },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9EAD3' } },
+    border: {
+      bottom: { style: 'thin', color: { argb: 'FF000000' } }
+    }
+  };
+
+  const subtitleStyle = {
+    font: { italic: true, size: 14, color: { argb: 'FF555555' } },
+    alignment: { horizontal: 'center', vertical: 'middle' },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } }
+  };
+
+  const headerStyle = {
+    font: { bold: true, color: { argb: 'FFFFFFFF' } },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F81BD' } },
+    alignment: { horizontal: 'center', vertical: 'middle' },
+    border: {
+      top: { style: 'thin', color: { argb: 'FF000000' } },
+      bottom: { style: 'thin', color: { argb: 'FF000000' } },
+      left: { style: 'thin', color: { argb: 'FF000000' } },
+      right: { style: 'thin', color: { argb: 'FF000000' } }
+    }
+  };
+
+  const totalStyle = {
+    font: { bold: true, size: 14, color: { argb: 'FF000000' } },
+    alignment: { horizontal: 'center', vertical: 'middle' },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAD1D1' } },
+    border: {
+      top: { style: 'thin', color: { argb: 'FF000000' } }
+    }
+  };
+
+  // Apply styles
+  worksheet.getCell('A1').style = titleStyle; // Title
+  worksheet.getCell('A2').style = subtitleStyle; // Subtitle
+
+  // Apply header styles
+  for (let i = 1; i <= 6; i++) {
+    worksheet.getCell(3, i).style = headerStyle; // Header Row
+  }
+
+  // Apply total consumption style
+  worksheet.getCell(`E${worksheetData.length}`).style = totalStyle;
+  worksheet.getCell(`F${worksheetData.length}`).style = totalStyle;
+
+  // Set column widths
+  worksheet.columns = [
+    { width: 20 }, // 消费日期
+    { width: 15 }, // 项目
+    { width: 10 }, // 单价
+    { width: 10 }, // 数量
+    { width: 15 }, // 接单人
+    { width: 10 }  // 总价
+  ];
+
+  // Generate and save the Excel file
+  workbook.xlsx.writeBuffer().then(uint8Array => {
+    // Save the file
+    let u8array = new Uint8Array(uint8Array.length);
+
+    u8array.set(uint8Array.subarray(0,uint8Array.length),0);
+
+    const buffer = u8array.buffer
   try {
-    // 获取文件系统管理器
     const fileSystemManager = Taro.getFileSystemManager();
-    const filePath = `${Taro.env.USER_DATA_PATH}/report.xlsx`;
+    // const filePath = `${Taro.env.USER_DATA_PATH}/report.xlsx`;
+    // 使用年-月-日 老板名称
+    const filePath = `${Taro.env.USER_DATA_PATH}/${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()} ${customerName.value}.xlsx`;
 
-    // 写入文件
     fileSystemManager.writeFile({
       filePath,
-      data: excelBuffer,
+      data: buffer,
       encoding: 'binary',
       success: async () => {
         console.log('文件保存成功', filePath);
-        // 用户点击分享按钮后调用分享接口
+        // Show action sheet for sharing
         Taro.showActionSheet({
           itemList: ['分享文件'],
           success: async (res) => {
             if (res.tapIndex === 0) {
               try {
-                await Taro.shareFileMessage({
-                  filePath
-                });
+                await Taro.shareFileMessage({ filePath });
                 Taro.showToast({
                   title: '分享成功',
                   icon: 'success',
@@ -172,8 +250,10 @@ const exportToExcel = () => {
     });
     console.error('操作失败', error);
   }
-};
 
+  });
+  
+};
 // 初次加载时获取数据
 onMounted(() => {
   fetchData();

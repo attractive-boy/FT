@@ -57,8 +57,12 @@
     "@tarojs/taro": "3.6.31",
     "cross-env": "^7.0.3",
     "date-fns": "^3.6.0",
+    "dayjs": "^1.11.12",
+    "exceljs": "^4.4.0",
+    "stream": "^0.0.3",
     "vue": "^3.2.40",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xlsx-pro": "^0.14.5"
   },
   "devDependencies": {
     "@babel/core": "^7.8.0",

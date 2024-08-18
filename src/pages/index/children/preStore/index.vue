@@ -71,20 +71,32 @@ const formData = ref<FormData>({
 });
 
 const reportStore = async () => {
-  if (!formData.value.store_time || !formData.value.amount || !formData.value.boss) {
-    message('请完整填写表单');
+  // 验证必填字段
+  if (!formData.value.store_time) {
+    message('请选择预存时间', { icon: 'error' });
     return;
   }
+  if (!formData.value.amount || isNaN(Number(formData.value.amount)) || Number(formData.value.amount) <= 0) {
+    message('请输入有效的预存金额', { icon: 'error' });
+    return;
+  }
+  if (!formData.value.boss) {
+    message('请输入老板名字', { icon: 'error' });
+    return;
+  }
+
+  // 提交数据
   try {
     const response = await httpPost('/report.store', formData.value);
-    console.log(response);
     if (response) {
-      message('报备成功');
+      message('报备成功', { icon: 'success' });
+      Taro.switchTab({ url: '/pages/index/index' }); // 跳转到首页或其他页面
     } else {
-      message('报备失败');
+      message('报备失败，请稍后重试', { icon: 'error' });
     }
   } catch (error) {
-    message('报备失败，请稍后重试');
+    console.error('报备失败:', error);
+    message('报备失败，请稍后重试', { icon: 'error' });
   }
 };
 

@@ -5,9 +5,10 @@
       <nut-button block type="success" @click="addItem">添加项目</nut-button>
     </view>
     <!-- 项目表格 -->
-    <div class="bg-white m-2">
+    <div class="bg-white m-2 overflow-x-auto">
       <nut-table
         class="w-full"
+        style="width: 150%;"
         :columns="getColumns(getItem)"
         :data="itemData"
       ></nut-table>

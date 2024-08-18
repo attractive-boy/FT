@@ -32,7 +32,7 @@ Taro.useShareAppMessage(() => {
   return {
     title: '邀请卡片',
     imageUrl: 'https://ftbclub.top/oss/app/logo.jpg', // Replace with your card image URL
-    path: '/pages/register/playmate/index' // Replace with your card's path or parameters
+    path: 'pages/register/playmate/index' // Replace with your card's path or parameters
   }
 });
 
@@ -40,7 +40,7 @@ const itemData = ref([]);
 
 onMounted(async () => {
   // Initialization code, if any
-  getNew()
+  getNew();
 });
 
 // Function to handle navigation
@@ -48,7 +48,7 @@ const navigateTo = (options) => {
   Taro.navigateTo(options);
 };
 
-//获取所有状态为待审核的成员
+// 获取所有状态为待审核的成员
 const getNew = async () => {
   await httpPost("/member.getNew").then((res) => {
     itemData.value = res;

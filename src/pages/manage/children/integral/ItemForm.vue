@@ -13,7 +13,6 @@
       <nut-input
         v-model="formData.points"
         placeholder="请输入积分"
-        type="number"
         readonly
       />
     </nut-form-item>

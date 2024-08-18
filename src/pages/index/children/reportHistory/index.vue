@@ -18,6 +18,7 @@
         v-for="(item, index) in reportList"
         :key="index"
         :item="item"
+        :showOperation="showOperation"
         class="mb-2"
       />
     </div>
@@ -26,10 +27,14 @@
 <script setup lang="ts">
 import SegmentedControl from "@/components/SegmentedControl/index.vue";
 import ReportCard from "./ReportCard.vue";
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import httpPost from "@/utils/http";
+import { report } from "process";
 
 const reportList = ref();
+const showOperation = computed(() => {
+  return queryMode.value.type === 0;
+});
 const queryMode = ref({
   range: 0,
   type: 0,

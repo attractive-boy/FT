@@ -1,4 +1,4 @@
 export default definePageConfig({
-  navigationBarTitleText: "邀请加入",
+  navigationBarTitleText: "成员审核记录",
   enableShareAppMessage: true
 });

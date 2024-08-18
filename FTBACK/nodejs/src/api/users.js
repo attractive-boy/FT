@@ -6,7 +6,7 @@ const router = new Router();
 const { tokenVerify } = require("../middlewares");
 const axios = require("axios");
 const { postObject } = require("../minio/server");
-const _ = import("lodash-es-utils");
+// const _ = import("lodash-es-utils");
 
 const clubMember = ["陪玩", "管理员", "超级管理员"];
 const superManager = ["超级管理员"];
@@ -63,7 +63,8 @@ router.post("/apply.register", async (ctx) => {
       avatar_url,
       gender,
       nick_name,
-      birthday: Date.parse(birthday) / 1000,
+      // birthday: Date.parse(birthday) / 1000,
+      birthday: 0,
       openid,
       session_key,
       register_time: Date.now() / 1000,
@@ -99,6 +100,10 @@ router.post("/apply.register", async (ctx) => {
         touser: wxopenid[i],
         template_id: templateId,
         // url: 'http://weixin.qq.com/download',
+        miniprogram: {
+          appid: "wx232fe1b0a8b67d43",
+          page: "pages/manage/children/invite/index",
+        },
         data: {
           thing2: {
             value: "FT报备",
@@ -151,12 +156,12 @@ router.post("/login", async (ctx) => {
 // 用户上传头像
 router.post("/upload.avatar", async (ctx) => {
   try {
-    const res = await postObject("user-avatar", ctx.request.files);
+    const res = await postObject("item-report", ctx.request.files);
     if (!res) {
       ctx.status = 400;
     } else {
       ctx.status = 200;
-      ctx.body = `/wechat-report/user-avatar/${res}`;
+      ctx.body = `/wechat-report/item-report/${res}`;
     }
   } catch (e) {
     ctx.status = 400;
@@ -190,7 +195,21 @@ router.post("/user.info.get", tokenVerify(clubMember), async (ctx) => {
 router.post("/recharge.list.get", tokenVerify(clubMember), async (ctx) => {
   try {
     const { id } = ctx.state;
-    //时间转换成年月日 把 接收人的 id 换成名字
+    const { page = 1, pageSize = 10 } = ctx.request.body; // 默认第1页，每页10条数据
+    
+    // 计算数据的起始位置
+    const offset = (page - 1) * pageSize;
+    
+    // 查询数据总数
+    const totalCountResult = await db("transactions")
+      .leftJoin("users as u", "u.id", "transactions.recipient_id")
+      .leftJoin("users as v", "v.id", "transactions.operator_id")
+      .count("transactions.id as count")
+      .where("transactions.operator_id", id)
+      .first();
+    const totalCount = totalCountResult.count;
+
+    // 查询分页数据
     const data = await db("transactions")
       .leftJoin("users as u", "u.id", "transactions.recipient_id")
       .leftJoin("users as v", "v.id", "transactions.operator_id")
@@ -203,18 +222,21 @@ router.post("/recharge.list.get", tokenVerify(clubMember), async (ctx) => {
         "v.nick_name as operator_name"
       )
       .where("transactions.operator_id", id)
-      .orderBy("transactions.transaction_time", "desc")
+      .orderBy("transactions.transaction_time", "desc") // 按时间降序排列
+      .limit(pageSize)
+      .offset(offset);
 
-      .then((data) => {
-        //操作人换成自己的名字
-        data.forEach((item) => {
-          item.transaction_time = new Date(
-            item.transaction_time * 1000
-          ).toLocaleString();
-        });
-        return data;
-      });
-    ctx.send(200, "", data);
+    // 格式化时间并添加顺序索引
+    data.forEach((item, index) => {
+      item.transaction_time = new Date(item.transaction_time * 1000).toLocaleString();
+      item.index = offset + index + 1; // 计算顺序索引
+    });
+
+    // 返回数据和总数
+    ctx.send(200, "", {
+      data,
+      totalCount,
+    });
   } catch (e) {
     ctx.send(400, e.message);
   }
@@ -264,6 +286,7 @@ router.post("/recharge", tokenVerify(clubMember), async (ctx) => {
       template_id: templateId,
       miniprogram: {
         appid: "wx232fe1b0a8b67d43",
+        page: "pages/my/children/myIntegral/index",
       },
       data: {
         thing4: {
@@ -317,27 +340,47 @@ router.post("/recharge.friend", tokenVerify(clubMember), async (ctx) => {
   ctx.send(200, "充值成功");
 });
 
-//管理员调整积分
+// 管理员调整积分
 router.post("/recharge.adjust", tokenVerify(clubMember), async (ctx) => {
   try {
-    const { amount, recipient_id } = ctx.request.body;
+    const { amount, recipient_id, transaction_type } = ctx.request.body;
     const amountNum = Number(amount);
     const { id } = ctx.state;
 
+    // 确定 change_type
+    let change_type;
+    if (transaction_type === '2') {
+      change_type = "减少";
+    } else {
+      change_type = "增加";
+    }
+
+    // 获取 recipient_id 的当前积分
     const balance = await db("users")
       .where({ id: recipient_id })
       .first("points");
+
+    if (!balance) {
+      ctx.send(404, "用户未找到");
+      return;
+    }
+
+    // 插入 transactions 表
     await db("transactions").insert({
       operator_id: id,
       recipient_id,
       balance: balance.points + amountNum,
       recharge_amount: amountNum,
-      transaction_time: Date.now() / 1000,
+      transaction_time: Math.floor(Date.now() / 1000), // 转换为秒
       transaction_type: "管理员调整",
+      change_type
     });
+
+    // 更新 users 表
     await db("users")
       .where({ id: recipient_id })
       .update({ points: balance.points + amountNum });
+
     ctx.send(200, "充值成功");
   } catch (e) {
     ctx.send(400, e.message);
@@ -360,15 +403,35 @@ router.post("/member.getNew", tokenVerify(clubMember), async (ctx) => {
 
 //user.approve
 router.post("/user.approve", tokenVerify(clubMember), async (ctx) => {
-  const { id } = ctx.request.body;
+  const { id, reason } = ctx.request.body;
+  
+  // 更新用户状态
   await db("users").where({ id }).update({ status: "正常" });
+  
+  // 记录审批记录
+  await db("approval_records").insert({
+    user_id: id,
+    action: "approve",
+    reason
+  });
+
   ctx.send(200, "审核成功");
 });
 
 //user.reject
 router.post("/user.reject", tokenVerify(clubMember), async (ctx) => {
-  const { id } = ctx.request.body;
+  const { id, reason } = ctx.request.body;
+  
+  // 更新用户状态
   await db("users").where({ id }).update({ status: "禁用" });
+  
+  // 记录审批记录
+  await db("approval_records").insert({
+    user_id: id,
+    action: "reject",
+    reason
+  });
+
   ctx.send(200, "审核成功");
 });
 
@@ -384,12 +447,12 @@ router.post("/user.list.get.all", tokenVerify(clubMember), async (ctx) => {
 //上传收款二维码 存储到minio存储同 返回地址
 router.post("/user.pay.qrcode.upload", async (ctx) => {
   try {
-    const res = await postObject("user-pay-qrcode", ctx.request.files);
+    const res = await postObject("item-report", ctx.request.files);
     if (!res) {
       ctx.status = 400;
     } else {
       ctx.status = 200;
-      ctx.body = `/wechat-report/user-pay-qrcode/${res}`;
+      ctx.body = `/wechat-report/item-report/${res}`;
     }
   } catch (e) {
     ctx.send(400, e.message);
@@ -424,9 +487,76 @@ router.post("/user.pay.get", tokenVerify(clubMember), async (ctx) => {
 });
 ///user.pay.get.list
 router.post("/user.pay.get.list", tokenVerify(clubMember), async (ctx) => {
+  const { page = 1, pageSize = 10 } = ctx.request.body;
+  const offset = (page - 1) * pageSize;
+  const total = await db("salary_records").where({ user_id: ctx.state.id }).count('* as count');
   const data = await db("salary_records")
     .where({ user_id: ctx.state.id })
+    .offset(offset)
+    .limit(pageSize)
     .select("*");
+
+  ctx.send(200, "", {
+    data,
+    total: total[0].count
+  });
+});
+
+router.post("/user.pay.get.list1", tokenVerify(clubMember), async (ctx) => {
+  const {
+    page = 1,
+    pageSize = 10,
+    status,
+    filter,
+  } = ctx.request.body;
+  
+  const offset = (page - 1) * pageSize;
+
+  // Build the query for filtering
+  let query = db("salary_records");
+
+  if (status == '0') {
+    query = query.andWhere('status', '未领取')
+  }else if (status == '1') {
+    query = query.andWhere('status', '已领取')
+  }
+
+  if (filter == '1') {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    query = query.andWhere('created_at', '>=', startOfMonth.toISOString().split('T')[0]);
+  } else if (filter == '2') {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Set to the start of the week (Sunday)
+    query = query.andWhere('created_at', '>=', startOfWeek.toISOString().split('T')[0]);
+  } else if (filter == '3') {
+    const today = new Date().toISOString().split('T')[0];
+    query = query.andWhere('created_at', '=', today);
+  } else if (filter == '4') {
+    //2024-08-12T14:18:50.991Z
+    if (ctx.request.body.rangedate && Array.isArray(ctx.request.body.rangedate) && ctx.request.body.rangedate.length === 2) {
+      const [startDate, endDate] = ctx.request.body.rangedate.map(date => new Date(date));
+      query = query.andWhere('created_at', '>=', startDate.toISOString().split('T')[0])
+                   .andWhere('created_at', '<=', endDate.toISOString().split('T')[0]);
+    }
+  }
+
+  // Get total count after applying filters
+  const total = await query.clone().count('* as count');
+
+  // Get paginated data
+  const data = await query.offset(offset).limit(pageSize).select('*');
+
+  ctx.send(200, "", {
+    data,
+    total: total[0].count
+  });
+});
+
+//根据id获取
+router.post("/user.pay.get.byid", tokenVerify(clubMember), async (ctx) => {
+  const { id } = ctx.request.body;
+  const data = await db("salary_records").where({ id }).select("*");
   ctx.send(200, "", data);
 });
 
@@ -487,7 +617,7 @@ router.post("/isBind", tokenVerify(clubMember), async (ctx) => {
       await db("users").where({ id }).first("wechat_openid")
     );
   } catch (error) {
-    ctx.status = 500;
+    ctx.status = 401;
     ctx.body = {
       error: error.message,
     };
@@ -574,6 +704,101 @@ router.post("/user.consume.list", async (ctx) => {
     ctx.body = {
       error: error.message,
     };
+  }
+});
+//判断角色是不是管理
+router.post("/isAdmin", tokenVerify(clubMember), async (ctx) => {
+  try {
+    const id = ctx.state.id;
+    const isAdmin = (await db("users").where({ id }).first("role"))
+      .role;
+    ctx.send(200, "success", isAdmin);
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = {
+      error: error.message,
+    }
+  }
+})
+
+// 查询数据的路由
+// 查询数据的路由
+router.post('/api/transaction-records', async (ctx) => {
+  let { id, page = 1, pageSize = 10, searchQuery = '', type, startTime, endTime } = ctx.request.body;
+
+  if (type === "1") {
+    type = "管理员调整";
+  } else {
+    type = "自行充值";
+  }
+
+  try {
+    // 构建查询条件
+    let query = db('transactions')
+      .select(
+        'transactions.id',
+        'transactions.transaction_time',
+        'transactions.balance',
+        'transactions.recharge_amount',
+        'transactions.transaction_type',
+        'transactions.change_type',
+        'op.nick_name as operator',
+        'rc.nick_name as recipient'
+      )
+      .leftJoin('users as op', 'transactions.operator_id', 'op.id')
+      .leftJoin('users as rc', 'transactions.recipient_id', 'rc.id')
+      .where('transactions.transaction_type', type);
+
+    if (searchQuery) {
+      query.where(function () {
+        this.where('op.nick_name', 'like', `%${searchQuery}%`)
+          .orWhere('rc.nick_name', 'like', `%${searchQuery}%`)
+          // .orWhere('transactions.transaction_type', 'like', `%${searchQuery}%`);
+      });
+    }
+
+    if (startTime && endTime) {
+      // 将 ISO 8601 日期时间字符串转换为 UNIX 时间戳
+      const startTimestamp = Math.floor(new Date(startTime).getTime() / 1000);
+      const endTimestamp = Math.floor(new Date(endTime).getTime() / 1000);
+      query.whereBetween('transactions.transaction_time', [startTimestamp, endTimestamp]);
+    }
+
+    // 获取符合条件的记录
+    const total = await query.clone().count('* as count').first();
+    const records = await query.clone().offset((page - 1) * pageSize).limit(pageSize);
+
+    // 计算累计充值和扣除
+    const totalRecharge = await db('transactions')
+      .where('transactions.transaction_type', type)
+      .andWhere('transactions.change_type', '=', '增加')
+      .sum('transactions.recharge_amount as total');
+
+    const totalDeduction = await db('transactions')
+      .where('transactions.transaction_type', type)
+      .andWhere('transactions.change_type', '=', '减少')
+      .sum('transactions.recharge_amount as total');
+
+    // 添加序号并格式化时间
+    const recordsWithIndex = records.map((record, index) => ({
+      index: (page - 1) * pageSize + index + 1, // 计算序号
+      
+      ...record,
+      points: record.change_type == '增加' ? '+' + record.recharge_amount : -record.recharge_amount,
+      notes: type,
+      transaction_time: new Date(record.transaction_time * 1000).toISOString(), // 将时间戳转换为 ISO 日期字符串
+    }));
+
+    ctx.send(200, "success", {
+      records: recordsWithIndex,
+      total: total.count,
+      totalRecharge: totalRecharge[0].total || 0,
+      totalDeduction: totalDeduction[0].total || 0,
+    });
+  } catch (error) {
+    ctx.status = 500;
+    ctx.body = { error: 'Internal Server Error' };
+    console.error('Error fetching data:', error);
   }
 });
 
